@@ -140,6 +140,7 @@ tbody tr:nth-child(even),tbody tr:nth-child(even){background:var(--paper-2)}
 .t-instructions ul{margin:.4em 0}
 .t-controls{display:flex;flex-wrap:wrap;gap:16px 22px;align-items:center;margin:18px 0}
 .t-controls label{font-family:var(--sans);font-size:.9rem;display:flex;align-items:center;gap:8px}
+.t-controls select{font:inherit;font-size:.9rem;padding:6px 10px;border:1px solid var(--line-2);border-radius:8px;background:#fff;color:var(--ink)}
 .btn{font-family:var(--sans);font-weight:700;border-radius:9px;padding:12px 24px;border:1px solid transparent;cursor:pointer;font-size:1rem}
 .btn.primary{background:var(--gold);color:var(--navy)}
 .btn.primary:hover{background:#cfa53c}

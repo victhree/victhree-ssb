@@ -35,9 +35,18 @@
         <p class="small muted">There are no "correct" answers. The goal is an honest, positive, doable reflex — not a memorised bank.</p>
       </div>
       <div class="t-controls">
+        <label>How many words?
+          <select id="t-count">
+            <option value="10">10</option>
+            <option value="20">20</option>
+            <option value="30" selected>30</option>
+            <option value="60">60</option>
+            <option value="0">All 200</option>
+          </select>
+        </label>
         <label><input type="checkbox" id="t-shuffle" checked /> Shuffle order</label>
       </div>
-      <button id="t-start" class="btn primary">Start — 36 words</button>
+      <button id="t-start" class="btn primary">Start</button>
       <p style="margin-top:14px"><a href="#" id="t-resume" class="link-btn" style="display:none">View your last session's review →</a></p>
     </section>
 

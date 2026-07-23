@@ -32,7 +32,11 @@
   /* ---------- run ---------- */
   function start(){
     var pool = CFG.items || [];
-    S.items = $("t-shuffle").checked ? shuffle(pool) : pool.slice();
+    var chosen = $("t-shuffle").checked ? shuffle(pool) : pool.slice();
+    var sel = $("t-count");
+    var n = sel ? parseInt(sel.value, 10) : 0;
+    if (n > 0 && n < chosen.length) chosen = chosen.slice(0, n);
+    S.items = chosen;
     S.idx = 0; S.responses = [];
     panel("t-run");
     render();
