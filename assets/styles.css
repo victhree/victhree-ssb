@@ -64,6 +64,9 @@ main{padding:34px 0 30px}
 .hero .cta{display:inline-block;margin-top:18px;background:var(--gold);color:var(--navy);font-family:var(--sans);font-weight:700;text-decoration:none;padding:12px 24px;border-radius:8px}
 .hero .cta:hover{background:#cfa53c}
 .home-title{text-align:center;margin:34px 0 26px;font-size:2rem}
+.approach-nav{margin:0 0 20px}
+.approach-nav a{display:inline-block;font-family:var(--sans);font-weight:700;font-size:.9rem;background:var(--paper-2);border:1px solid var(--line-2);border-radius:8px;padding:10px 16px;text-decoration:none;color:var(--navy)}
+.approach-nav a:hover{border-color:var(--gold);color:var(--gold)}
 
 /* ---------- cards ---------- */
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;margin:26px 0}
