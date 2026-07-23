@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>WAT Practice — Timed Trainer | VicThree SSB</title>
+<meta name="description" content="Timed WAT trainer: one word every 15 seconds, then a self-review, self-audit checklist, optional Gemini analysis and copy-to-AI export." />
+<link rel="stylesheet" href="../../../assets/styles.css" />
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="../../../index.html"><img class="brand-img" src="../../../assets/banner.png" alt="VicThree Defence — by Anmol Sharma" /></a>
+    <nav class="nav">
+      <a href="../../../index.html">Home</a>
+      <a href="../../index.html">Psychology</a>
+      <a href="../index.html" class="active">WAT</a>
+      <a href="../../srt/index.html">SRT</a>
+      <a href="../../../about/index.html">About</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <p class="breadcrumb"><a href="../../../index.html">Home</a> › <a href="../../index.html">Psychology</a> › <a href="../index.html">WAT</a> › Practice</p>
+    <p class="eyebrow">Test One · Practice</p>
+    <h1>WAT practice worksheet</h1>
+
+    <!-- INTRO -->
+    <section id="t-intro" class="t-panel active">
+      <div class="t-instructions">
+        <p><strong>15 seconds per word.</strong> Write the first meaningful sentence — don't curate. Words are a mix of positive (P), negative (N) and neutral (X). After the set, self-audit: any robotic flips? any hero-"I"? any pile-up?</p>
+        <p class="small muted">There are no "correct" answers. The goal is an honest, positive, doable reflex — not a memorised bank.</p>
+      </div>
+      <div class="t-controls">
+        <label><input type="checkbox" id="t-shuffle" checked /> Shuffle order</label>
+      </div>
+      <button id="t-start" class="btn primary">Start — 36 words</button>
+      <p style="margin-top:14px"><a href="#" id="t-resume" class="link-btn" style="display:none">View your last session's review →</a></p>
+    </section>
+
+    <!-- RUN -->
+    <section id="t-run" class="t-panel">
+      <div class="t-head">
+        <div id="t-progress" class="t-bar"><div></div></div>
+        <div class="t-meta"><span id="t-counter">1 / 36</span><span id="t-timer" class="t-timer">15</span></div>
+      </div>
+      <div class="t-prompt-box">
+        <span id="t-kind" class="t-kind">Word</span>
+        <span id="t-prompt" class="t-word">—</span>
+      </div>
+      <textarea id="t-input" rows="2" placeholder="First sentence that comes to mind…" autocomplete="off"></textarea>
+      <div class="t-actions">
+        <button id="t-skip" class="btn ghost">Skip</button>
+        <button id="t-next" class="btn primary">Next →</button>
+      </div>
+      <p class="t-hint">Press <kbd>Enter</kbd> to submit and advance. If you blank, skip cleanly and move on — that's the officer-like move.</p>
+      <p style="margin-top:10px"><button id="t-quit" class="link-btn">Quit</button></p>
+    </section>
+
+    <!-- RESULTS -->
+    <section id="t-results" class="t-panel">
+      <h2>Your session review</h2>
+      <div id="t-stats" class="t-stats"></div>
+
+      <div id="t-ai" class="ai-box" style="display:none">
+        <h3>Gemini analysis</h3>
+        <p class="ai-tagline">An AI assessor's read of your responses. Guidance, not a verdict — there are no official correct answers.</p>
+        <p id="ai-status" class="ai-status"></p>
+        <div id="ai-body"></div>
+      </div>
+      <p id="ai-off-hint" class="small muted" style="display:none">AI analysis is currently off. Use <strong>Copy for AI analysis</strong> below to get a detailed read from ChatGPT / Claude / Gemini, or ask the site owner to enable in-page analysis.</p>
+
+      <details class="heur">
+        <summary>Automated read (offline heuristics)</summary>
+        <p class="note">Pattern signals a simple tool can catch — not a score, and no substitute for an assessor.</p>
+        <ul id="heur-list"></ul>
+      </details>
+
+      <h3>Response-by-response</h3>
+      <div id="t-review" class="t-review"></div>
+
+      <div class="t-checklist">
+        <h3>Self-audit checklist</h3>
+        <div id="t-checklist-items"></div>
+      </div>
+
+      <div class="t-toolbar">
+        <button id="t-copy" class="btn primary">📋 Copy for AI analysis</button>
+        <button id="t-restart" class="btn ghost">New session</button>
+      </div>
+      <p id="t-copynote" class="copy-note" style="display:none">Copied! Paste into any AI for a detailed OLQ analysis.</p>
+    </section>
+
+    <div class="page-foot-nav">
+      <a href="../positive-trap/index.html">← Positive-Word Trap</a>
+      <a href="../../srt/practice/index.html">SRT Practice →</a>
+    </div>
+  </div>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <p><strong style="color:var(--gold-soft)">Independent study material.</strong> Not affiliated with or endorsed by the Services Selection Board, UPSC, or the Ministry of Defence.</p>
+    <p>There are no official "correct" answers in the SSB psychology tests — every example here illustrates a mindset, not a script to memorise.</p>
+  </div>
+</footer>
+
+<script src="../../../assets/config.js"></script>
+<script src="../../../data/wat-practice.js"></script>
+<script>
+  window.TRAINER = {
+    mode: "WAT",
+    seconds: 15,
+    items: window.WAT_PRACTICE,
+    checklist: [
+      "Did I write in one clean sentence per word?",
+      "Did I avoid mechanically flipping every negative word?",
+      "Did I avoid movie-hero “I will single-handedly…” lines?",
+      "Where I blanked, did I move on cleanly instead of panicking?"
+    ]
+  };
+</script>
+<script src="../../../assets/trainer.js"></script>
+</body>
+</html>
