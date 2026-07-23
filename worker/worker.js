@@ -21,9 +21,15 @@ const ALLOWED_ORIGINS = [
   "http://localhost:8099"   // local testing; remove if you like
 ];
 
-// Gemini model. "gemini-2.0-flash" is fast and cheap; you can switch to
-// another current Flash model from Google AI Studio if you prefer.
-const MODEL = "gemini-2.0-flash";
+// Gemini models to try, in order. The Worker uses the first one that
+// succeeds for your account's free tier. Reorder / trim as you like.
+const MODELS = [
+  "gemini-2.5-flash",
+  "gemini-flash-latest",
+  "gemini-3-flash-preview",
+  "gemini-2.0-flash",
+  "gemini-2.0-flash-lite"
+];
 
 export default {
   async fetch(request, env) {
@@ -59,7 +65,6 @@ export default {
 
     const prompt = buildPrompt(mode, items);
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${env.GEMINI_API_KEY}`;
     const body = {
       contents: [{ role: "user", parts: [{ text: prompt }] }],
       generationConfig: {
@@ -68,33 +73,42 @@ export default {
       }
     };
 
-    let gemRes;
-    try {
-      gemRes = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-      });
-    } catch (e) {
-      return json({ error: "Upstream fetch failed" }, 502, cors);
+    // Try each model in turn; use the first that your free tier serves.
+    let text = null, usedModel = null, lastErr = "";
+    for (const model of MODELS) {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${env.GEMINI_API_KEY}`;
+      let gemRes;
+      try {
+        gemRes = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body)
+        });
+      } catch (e) {
+        lastErr = "fetch failed for " + model;
+        continue;
+      }
+      if (!gemRes.ok) {
+        const t = await gemRes.text();
+        lastErr = model + " → " + gemRes.status + ": " + t.slice(0, 400);
+        continue;
+      }
+      const data = await gemRes.json();
+      const t =
+        data &&
+        data.candidates &&
+        data.candidates[0] &&
+        data.candidates[0].content &&
+        data.candidates[0].content.parts &&
+        data.candidates[0].content.parts[0] &&
+        data.candidates[0].content.parts[0].text;
+      if (t) { text = t; usedModel = model; break; }
+      lastErr = "empty response from " + model;
     }
 
-    if (!gemRes.ok) {
-      const t = await gemRes.text();
-      return json({ error: "Gemini error " + gemRes.status, detail: t.slice(0, 300) }, 502, cors);
+    if (!text) {
+      return json({ error: "All models failed", detail: lastErr }, 502, cors);
     }
-
-    const data = await gemRes.json();
-    const text =
-      data &&
-      data.candidates &&
-      data.candidates[0] &&
-      data.candidates[0].content &&
-      data.candidates[0].content.parts &&
-      data.candidates[0].content.parts[0] &&
-      data.candidates[0].content.parts[0].text;
-
-    if (!text) return json({ error: "Empty response from Gemini" }, 502, cors);
 
     // The model was asked for JSON; parse it, else pass raw text as summary.
     let parsed;
@@ -103,6 +117,7 @@ export default {
     } catch (e) {
       parsed = { summary: text };
     }
+    if (parsed && typeof parsed === "object") parsed._model = usedModel;
     return json(parsed, 200, cors);
   }
 };
