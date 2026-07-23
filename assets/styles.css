@@ -40,13 +40,12 @@ strong{color:var(--navy)}
 hr{border:none;border-top:1px solid var(--line);margin:2.4em 0}
 
 /* ---------- top nav ---------- */
-.topbar{background:var(--navy);color:var(--paper);border-bottom:3px solid var(--gold)}
-.topbar .wrap{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding-top:10px;padding-bottom:10px}
-.brand{font-family:var(--serif);font-size:1.4rem;font-weight:700;color:var(--paper);text-decoration:none;letter-spacing:.3px;display:inline-flex;align-items:center}
+.topbar{background:var(--navy);color:var(--paper);border-bottom:3px solid var(--gold);text-align:center}
+.topbar .wrap{display:block;max-width:900px;padding:6px 0 0}
+.brand{display:block;text-decoration:none}
 .brand b{color:var(--gold)}
-.brand-img{height:56px;width:auto;display:block}
-@media(max-width:560px){.brand-img{height:42px}}
-.nav{display:flex;gap:4px;flex-wrap:wrap;font-family:var(--sans)}
+.brand-img{display:block;width:100%;max-width:860px;height:auto;margin:0 auto}
+.nav{display:flex;gap:8px;flex-wrap:wrap;font-family:var(--sans);justify-content:center;padding:10px 12px 14px}
 .nav a{color:var(--gold-soft);text-decoration:none;font-size:.82rem;font-weight:600;letter-spacing:.03em;text-transform:uppercase;padding:6px 10px;border-radius:6px}
 .nav a:hover,.nav a.active{background:var(--navy-2);color:#fff}
 
@@ -64,6 +63,7 @@ main{padding:34px 0 30px}
 .hero .sub{color:var(--gold-soft);font-size:1.2rem;max-width:52ch;margin-top:.2em}
 .hero .cta{display:inline-block;margin-top:18px;background:var(--gold);color:var(--navy);font-family:var(--sans);font-weight:700;text-decoration:none;padding:12px 24px;border-radius:8px}
 .hero .cta:hover{background:#cfa53c}
+.home-title{text-align:center;margin:34px 0 26px;font-size:2rem}
 
 /* ---------- cards ---------- */
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;margin:26px 0}
