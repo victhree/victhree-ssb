@@ -9,5 +9,5 @@
    Setup steps are in README.md (section "Enabling Gemini analysis").
    ---------------------------------------------------------------- */
 window.VICTHREE_CONFIG = {
-  aiEndpoint: ""
+  aiEndpoint: "https://victhree-ssb-ai.anmolxsharma.workers.dev"
 };
