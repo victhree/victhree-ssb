@@ -220,6 +220,17 @@ tbody tr:nth-child(even),tbody tr:nth-child(even){background:var(--paper-2)}
 .ai-box .ai-item .qn{font-family:var(--sans);font-weight:700;color:var(--navy);font-size:.85rem}
 .ai-box .ai-item .ai-your{color:var(--ink-soft);margin:.25em 0}
 .ai-box .sugg{color:var(--ok)}
+.ai-card{border-radius:10px;padding:14px 18px;margin:14px 0;border:1px solid var(--line)}
+.ai-card h4{margin:0 0 .45em}
+.ai-card p{margin:0}
+.ai-card ul{margin:.3em 0 0;padding-left:20px}
+.ai-card li{margin:.35em 0}
+.ai-card.snapshot{background:#eef2f8;border-color:#d7e0ee}
+.ai-card.snapshot h4{color:var(--navy)}
+.ai-card.reflected{background:#eef4ec;border-color:#cfe0c9}
+.ai-card.reflected h4{color:var(--ok)}
+.ai-card.work{background:#f8f2e2;border-color:#e9dcb8}
+.ai-card.work h4{color:#8a6d1e}
 .spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--line-2);border-top-color:var(--navy);border-radius:50%;animation:spin .8s linear infinite;vertical-align:middle;margin-right:8px}
 @keyframes spin{to{transform:rotate(360deg)}}
 

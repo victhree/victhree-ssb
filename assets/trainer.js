@@ -128,11 +128,11 @@
     $("ai-status").textContent="";
     var body=$("ai-body"); body.innerHTML="";
     if(typeof data==="string"){ body.appendChild(el("p",null,data)); return; }
-    if(data.summary){ body.appendChild(el("h4",null,"Personality snapshot")); body.appendChild(el("p",null,data.summary)); }
+    if(data.summary){ var c1=el("div","ai-card snapshot"); c1.appendChild(el("h4",null,"Personality snapshot")); c1.appendChild(el("p",null,data.summary)); body.appendChild(c1); }
     var reflected = data.olqs_reflected || data.strengths;
-    if(reflected&&reflected.length){ body.appendChild(el("h4",null,"Officer-Like Qualities reflected")); var u=el("ul"); reflected.forEach(function(s){u.appendChild(el("li",null,s));}); body.appendChild(u); }
+    if(reflected&&reflected.length){ var c2=el("div","ai-card reflected"); c2.appendChild(el("h4",null,"Officer-Like Qualities reflected")); var u=el("ul"); reflected.forEach(function(s){u.appendChild(el("li",null,s));}); c2.appendChild(u); body.appendChild(c2); }
     var work = data.olqs_to_work_on || data.improve;
-    if(work&&work.length){ body.appendChild(el("h4",null,"OLQs to work on")); var u2=el("ul"); work.forEach(function(s){u2.appendChild(el("li",null,s));}); body.appendChild(u2); }
+    if(work&&work.length){ var c3=el("div","ai-card work"); c3.appendChild(el("h4",null,"OLQs to work on")); var u2=el("ul"); work.forEach(function(s){u2.appendChild(el("li",null,s));}); c3.appendChild(u2); body.appendChild(c3); }
     if(data.items&&data.items.length){
       data.items.forEach(function(it){
         var d=el("div","ai-item");
