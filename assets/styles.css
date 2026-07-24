@@ -69,10 +69,10 @@ main{padding:34px 0 30px}
 .home-cards .card h3{margin:0;font-size:clamp(1.05rem,4.4vw,1.4rem);white-space:nowrap}
 .card-abbr{display:block;margin-top:6px;font-family:var(--sans);font-weight:700;letter-spacing:.14em;color:var(--gold);font-size:.9rem}
 
-.trainer-head{text-align:center;margin-bottom:18px}
+.trainer-head{text-align:left;margin-bottom:18px}
 .trainer-head h1{margin:.1em 0}
 .trainer-head .eyebrow{margin-bottom:.2em}
-.t-sub{color:var(--ink-soft);font-family:var(--sans);font-size:1rem;line-height:1.6;max-width:60ch;margin:.5em auto 0}
+.t-sub{color:var(--ink-soft);font-family:var(--sans);font-size:1rem;line-height:1.6;max-width:64ch;margin:.5em 0 0}
 .approach-wrap{text-align:center;margin:0 0 24px}
 .approach-tile{display:inline-block;background:var(--gold);color:var(--navy);font-family:var(--sans);font-weight:700;font-size:.95rem;text-decoration:none;padding:12px 24px;border-radius:10px}
 .approach-tile:hover{background:#cfa53c;color:var(--navy)}
@@ -149,9 +149,10 @@ tbody tr:nth-child(even),tbody tr:nth-child(even){background:var(--paper-2)}
 /* ---------- trainer ---------- */
 .t-panel{display:none}
 .t-panel.active{display:block}
-.t-controls{margin:22px auto 0;max-width:560px}
-.t-count-label{display:block;text-align:center;font-family:var(--sans);font-weight:600;font-size:1rem;margin-bottom:10px}
+.t-controls{margin:22px 0 0;max-width:560px}
+.t-count-label{display:block;text-align:left;font-family:var(--sans);font-weight:600;font-size:1rem;margin-bottom:10px}
 .t-count-row{display:flex;gap:14px;align-items:stretch}
+#t-resume{margin-top:12px}
 .t-count-row select{flex:1 1 0;min-width:0;font-family:var(--sans);font-size:1.05rem;padding:14px 16px;border:1px solid var(--line-2);border-radius:10px;background:#fff;color:var(--ink)}
 .t-count-row .btn{flex:1 1 0;min-width:0;font-size:1.05rem;padding:14px 16px}
 .btn{font-family:var(--sans);font-weight:700;border-radius:9px;padding:12px 24px;border:1px solid transparent;cursor:pointer;font-size:1rem}

@@ -211,7 +211,7 @@
     $("t-restart").addEventListener("click", function(){ panel("t-intro"); });
     $("t-copy").addEventListener("click", copyText);
     $("t-input").addEventListener("keydown", function(e){ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); commit(); } });
-    if(hasSaved()){ var link=$("t-resume"); link.style.display="inline"; link.addEventListener("click", function(e){ e.preventDefault(); loadSaved(); }); }
+    if(hasSaved()){ var link=$("t-resume"); link.style.display="inline-block"; link.addEventListener("click", function(e){ e.preventDefault(); loadSaved(); }); }
     if(!AI){ var hint=$("ai-off-hint"); if(hint) hint.style.display="block"; }
   });
 })();
