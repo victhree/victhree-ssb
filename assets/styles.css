@@ -73,7 +73,7 @@ main{padding:34px 0 30px}
 .home-more a:hover{color:var(--gold)}
 @media(max-width:600px){
   main{padding-top:16px}
-  .cta{margin-top:4px}
+  .cta-wrap .cta{margin-top:4px}
   .home-more{margin-top:36px}
   .cards.home-cards .card h3{font-size:1.25rem}
 }
