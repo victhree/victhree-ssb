@@ -183,6 +183,17 @@
   /* ---------- download report ---------- */
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
   function downloadReport(){
+    var img=document.querySelector(".brand-img");
+    if(img && img.src){
+      fetch(img.src).then(function(r){return r.blob();}).then(function(b){
+        var fr=new FileReader();
+        fr.onload=function(){ buildReport(fr.result); };
+        fr.onerror=function(){ buildReport(""); };
+        fr.readAsDataURL(b);
+      }).catch(function(){ buildReport(""); });
+    } else { buildReport(""); }
+  }
+  function buildReport(banner){
     var R=S.responses, A=S.analysis, mode=CFG.mode;
     var testName = mode==="SRT" ? "Situation Reaction Test (SRT)" : "Word Association Test (WAT)";
     var when = new Date().toLocaleString();
@@ -190,8 +201,9 @@
     var p=[];
     p.push('<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">');
     p.push('<title>VicThree SSB — '+mode+' Performance Report</title>');
-    p.push('<style>body{font-family:Georgia,serif;color:#1c2331;max-width:820px;margin:26px auto;padding:0 22px;line-height:1.6}h1{color:#0f2340;margin:0}h2{color:#0f2340;margin-top:1.5em}h4{margin:0 0 .4em}.meta{color:#4a5265;font-family:Arial,sans-serif;font-size:14px;margin:.3em 0 1.2em}.stat{font-family:Arial,sans-serif}.card{border:1px solid #e2ddcd;border-radius:10px;padding:14px 18px;margin:14px 0}.snapshot{background:#eef2f8}.snapshot h4{color:#0f2340}.reflected{background:#eef4ec}.reflected h4{color:#3f6b3a}.work{background:#f8f2e2}.work h4{color:#8a6d1e}.card ul{margin:.3em 0 0;padding-left:20px}.item{border-top:1px solid #eee;padding-top:10px;margin-top:12px}.qn{font-family:Arial,sans-serif;font-weight:700;color:#0f2340}.your{color:#4a5265}.sugg{color:#3f6b3a}.note{color:#4a5265;font-family:Arial,sans-serif;font-size:13px;border-top:1px solid #e2ddcd;margin-top:26px;padding-top:12px}</style>');
+    p.push('<style>body{font-family:Georgia,serif;color:#1c2331;max-width:820px;margin:26px auto;padding:0 22px;line-height:1.6}h1{color:#0f2340;margin:0}h2{color:#0f2340;margin-top:1.5em}h4{margin:0 0 .4em}.banner{background:#0f2340;text-align:center;padding:12px 16px;border-radius:10px;margin:0 0 22px}.banner img{max-width:520px;width:100%;height:auto;display:block;margin:0 auto}.meta{color:#4a5265;font-family:Arial,sans-serif;font-size:14px;margin:.3em 0 1.2em}.stat{font-family:Arial,sans-serif}.card{border:1px solid #e2ddcd;border-radius:10px;padding:14px 18px;margin:14px 0}.snapshot{background:#eef2f8}.snapshot h4{color:#0f2340}.reflected{background:#eef4ec}.reflected h4{color:#3f6b3a}.work{background:#f8f2e2}.work h4{color:#8a6d1e}.card ul{margin:.3em 0 0;padding-left:20px}.item{border-top:1px solid #eee;padding-top:10px;margin-top:12px}.qn{font-family:Arial,sans-serif;font-weight:700;color:#0f2340}.your{color:#4a5265}.sugg{color:#3f6b3a}.note{color:#4a5265;font-family:Arial,sans-serif;font-size:13px;border-top:1px solid #e2ddcd;margin-top:26px;padding-top:12px}</style>');
     p.push('</head><body>');
+    if(banner) p.push('<div class="banner"><img src="'+banner+'" alt="VicThree Defence"></div>');
     p.push('<h1>Performance Report</h1>');
     p.push('<p class="meta">'+testName+' &middot; '+esc(when)+'</p>');
     p.push('<p class="stat">Attempted '+attempted+' of '+R.length+'.</p>');
