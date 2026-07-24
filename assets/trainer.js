@@ -128,9 +128,11 @@
     $("ai-status").textContent="";
     var body=$("ai-body"); body.innerHTML="";
     if(typeof data==="string"){ body.appendChild(el("p",null,data)); return; }
-    if(data.summary){ body.appendChild(el("p",null,data.summary)); }
-    if(data.strengths&&data.strengths.length){ body.appendChild(el("h4",null,"Strengths")); var u=el("ul"); data.strengths.forEach(function(s){u.appendChild(el("li",null,s));}); body.appendChild(u); }
-    if(data.improve&&data.improve.length){ body.appendChild(el("h4",null,"Work on")); var u2=el("ul"); data.improve.forEach(function(s){u2.appendChild(el("li",null,s));}); body.appendChild(u2); }
+    if(data.summary){ body.appendChild(el("h4",null,"Personality snapshot")); body.appendChild(el("p",null,data.summary)); }
+    var reflected = data.olqs_reflected || data.strengths;
+    if(reflected&&reflected.length){ body.appendChild(el("h4",null,"Officer-Like Qualities reflected")); var u=el("ul"); reflected.forEach(function(s){u.appendChild(el("li",null,s));}); body.appendChild(u); }
+    var work = data.olqs_to_work_on || data.improve;
+    if(work&&work.length){ body.appendChild(el("h4",null,"OLQs to work on")); var u2=el("ul"); work.forEach(function(s){u2.appendChild(el("li",null,s));}); body.appendChild(u2); }
     if(data.items&&data.items.length){
       data.items.forEach(function(it){
         var d=el("div","ai-item");
