@@ -20,7 +20,7 @@
   var VIOLENT = ["kill","killed","murder","stab","shoot","destroy","revenge","beat him","beat them","hit him","hit them",
     "slap","punch","bomb","curse"];
 
-  var S = { items: [], idx: 0, responses: [], remaining: 0, startTs: 0, tick: null };
+  var S = { items: [], idx: 0, responses: [], remaining: 0, startTs: 0, tick: null, analysis: null };
 
   function $(id){ return document.getElementById(id); }
   function el(t,c,x){ var e=document.createElement(t); if(c)e.className=c; if(x!=null)e.textContent=x; return e; }
@@ -37,7 +37,7 @@
     var n = sel ? parseInt(sel.value, 10) : 0;
     if (n > 0 && n < chosen.length) chosen = chosen.slice(0, n);
     S.items = chosen;
-    S.idx = 0; S.responses = [];
+    S.idx = 0; S.responses = []; S.analysis = null;
     panel("t-run");
     render();
   }
@@ -127,6 +127,7 @@
   function renderAI(data){
     $("ai-status").textContent="";
     var body=$("ai-body"); body.innerHTML="";
+    S.analysis = (data && typeof data === "object") ? data : null;
     if(typeof data==="string"){ body.appendChild(el("p",null,data)); return; }
     if(data.summary){ var c1=el("div","ai-card snapshot"); c1.appendChild(el("h4",null,"Personality snapshot")); c1.appendChild(el("p",null,data.summary)); body.appendChild(c1); }
     var reflected = data.olqs_reflected || data.strengths;
@@ -179,6 +180,47 @@
     }catch(e){}
   }
 
+  /* ---------- download report ---------- */
+  function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+  function downloadReport(){
+    var R=S.responses, A=S.analysis, mode=CFG.mode;
+    var testName = mode==="SRT" ? "Situation Reaction Test (SRT)" : "Word Association Test (WAT)";
+    var when = new Date().toLocaleString();
+    var attempted = R.filter(function(r){return r.text.length>0;}).length;
+    var p=[];
+    p.push('<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">');
+    p.push('<title>VicThree SSB — '+mode+' Performance Report</title>');
+    p.push('<style>body{font-family:Georgia,serif;color:#1c2331;max-width:820px;margin:26px auto;padding:0 22px;line-height:1.6}h1{color:#0f2340;margin:0}h2{color:#0f2340;margin-top:1.5em}h4{margin:0 0 .4em}.meta{color:#4a5265;font-family:Arial,sans-serif;font-size:14px;margin:.3em 0 1.2em}.stat{font-family:Arial,sans-serif}.card{border:1px solid #e2ddcd;border-radius:10px;padding:14px 18px;margin:14px 0}.snapshot{background:#eef2f8}.snapshot h4{color:#0f2340}.reflected{background:#eef4ec}.reflected h4{color:#3f6b3a}.work{background:#f8f2e2}.work h4{color:#8a6d1e}.card ul{margin:.3em 0 0;padding-left:20px}.item{border-top:1px solid #eee;padding-top:10px;margin-top:12px}.qn{font-family:Arial,sans-serif;font-weight:700;color:#0f2340}.your{color:#4a5265}.sugg{color:#3f6b3a}.note{color:#4a5265;font-family:Arial,sans-serif;font-size:13px;border-top:1px solid #e2ddcd;margin-top:26px;padding-top:12px}</style>');
+    p.push('</head><body>');
+    p.push('<h1>Performance Report</h1>');
+    p.push('<p class="meta">'+testName+' &middot; '+esc(when)+'</p>');
+    p.push('<p class="stat">Attempted '+attempted+' of '+R.length+'.</p>');
+    if(A){
+      if(A.summary){ p.push('<div class="card snapshot"><h4>Personality snapshot</h4><p>'+esc(A.summary)+'</p></div>'); }
+      var refl=A.olqs_reflected||A.strengths;
+      if(refl&&refl.length){ p.push('<div class="card reflected"><h4>Officer-Like Qualities reflected</h4><ul>'+refl.map(function(s){return '<li>'+esc(s)+'</li>';}).join('')+'</ul></div>'); }
+      var work=A.olqs_to_work_on||A.improve;
+      if(work&&work.length){ p.push('<div class="card work"><h4>OLQs to work on</h4><ul>'+work.map(function(s){return '<li>'+esc(s)+'</li>';}).join('')+'</ul></div>'); }
+    }
+    p.push('<h2>Response-by-response</h2>');
+    R.forEach(function(r,i){
+      var it = (A && A.items) ? A.items.filter(function(x){return x.n===(i+1);})[0] : null;
+      p.push('<div class="item"><div class="qn">#'+(i+1)+'&nbsp; '+esc(promptOf(r.item))+'</div>');
+      p.push('<p class="your"><b>Your response:</b> '+esc(r.text||"(left blank)")+'</p>');
+      if(it && it.comment) p.push('<p>'+esc(it.comment)+'</p>');
+      if(it && it.suggestion) p.push('<p><b>Better alternative:</b> <span class="sugg">'+esc(it.suggestion)+'</span></p>');
+      p.push('</div>');
+    });
+    p.push('<p class="note">There are no official correct answers in the SSB psychology tests. This report is guidance to help improve your performance, not a verdict.</p>');
+    p.push('</body></html>');
+    var blob=new Blob([p.join("")], {type:"text/html"});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement("a");
+    a.href=url; a.download="VicThree-SSB-"+mode+"-Report.html";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1500);
+  }
+
   /* ---------- wire ---------- */
   document.addEventListener("DOMContentLoaded", function(){
     $("t-start").addEventListener("click", start);
@@ -186,6 +228,7 @@
     $("t-skip").addEventListener("click", skip);
     $("t-quit").addEventListener("click", function(){ clearInterval(S.tick); panel("t-intro"); });
     $("t-restart").addEventListener("click", function(){ panel("t-intro"); });
+    var dlBtn=$("t-download"); if(dlBtn) dlBtn.addEventListener("click", downloadReport);
     var copyBtn=$("t-copy"); if(copyBtn) copyBtn.addEventListener("click", copyText);
     $("t-input").addEventListener("keydown", function(e){ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); commit(); } });
     if(hasSaved()){ var link=$("t-resume"); link.style.display="inline-block"; link.addEventListener("click", function(e){ e.preventDefault(); loadSaved(); }); }
