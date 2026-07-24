@@ -82,7 +82,7 @@ main{padding:34px 0 30px}
 .trainer-head h1{margin:.1em 0}
 .trainer-head .eyebrow{margin-bottom:.2em}
 .t-sub{color:var(--ink-soft);font-family:var(--sans);font-size:1rem;line-height:1.6;max-width:64ch;margin:.5em 0 0}
-.approach-wrap{text-align:center;margin:0 0 24px}
+.approach-wrap{text-align:left;margin:16px 0 26px}
 .approach-tile{display:inline-block;background:var(--gold);color:var(--navy);font-family:var(--sans);font-weight:700;font-size:.95rem;text-decoration:none;padding:12px 24px;border-radius:10px}
 .approach-tile:hover{background:#cfa53c;color:var(--navy)}
 
