@@ -72,7 +72,7 @@ main{padding:34px 0 30px}
 
 /* CDS CTA (matches vocab/mocks sites) */
 .cta{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;background:linear-gradient(135deg,var(--navy),var(--navy-2));color:#fff;border-radius:14px;padding:14px 20px;margin:26px 0 0;text-align:center;box-shadow:0 8px 22px rgba(15,35,64,.12)}
-.cta-text{font-family:var(--sans);font-size:14px;font-weight:600;color:#fff;line-height:1.45}
+.cta-text{font-family:var(--sans);font-size:15px;font-weight:600;color:#fff;line-height:1.45}
 .cta-social{display:flex;gap:16px;align-items:center}
 .cta-social a{color:var(--gold-soft);display:inline-flex;line-height:0;text-decoration:none;transition:color .12s,transform .12s}
 .cta-social a:hover{color:#fff;transform:translateY(-2px)}
