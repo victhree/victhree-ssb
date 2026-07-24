@@ -104,33 +104,6 @@
     [["Attempted",attempted+" / "+R.length],["Left blank",blanks],["Avg time",avg.toFixed(1)+"s"],["Total",fmt(total)]]
       .forEach(function(p){ var c=el("div","t-stat"); c.appendChild(el("div","n",String(p[1]))); c.appendChild(el("div","l",p[0])); st.appendChild(c); });
 
-    // heuristics (collapsible)
-    var neg=0,vio=0,shrt=0,slow=0;
-    R.forEach(function(r){ analyse(r.text).forEach(function(f){ if(f.t.indexOf("Negative")===0)neg++; if(f.t.indexOf("Aggressive")===0)vio++; if(f.t.indexOf("Very short")===0)shrt++; }); if(timeFlag(r))slow++; });
-    var ul=$("heur-list"); ul.innerHTML="";
-    function li(x){ ul.appendChild(el("li",null,x)); }
-    if(blanks===0) li("You attempted every item — not leaving blanks is a strong signal."); else li(blanks+" left blank. Aim for zero — attempting all shows quick thinking.");
-    if(vio) li(vio+" response(s) had an aggressive/violent tone — prefer lawful, constructive reactions.");
-    if(neg) li(neg+" response(s) used negative/defeatist words — reframe towards positive, solution-focused lines."); else if(attempted) li("No obviously negative wording detected.");
-    if(shrt) li(shrt+" response(s) were very short — a complete short sentence beats a fragment.");
-    if(slow) li(slow+" response(s) used most/all of the time — practise reacting faster."); else if(attempted) li("Good pace overall.");
-
-    // self-review list
-    var rev=$("t-review"); rev.innerHTML="";
-    R.forEach(function(r,i){
-      var card=el("div","t-rev");
-      var p=el("p","p"); p.appendChild(el("span","i","#"+(i+1)));
-      p.appendChild(document.createTextNode(promptOf(r.item)));
-      var tg=tagOf(r.item); if(tg){ var b=el("span","tag "+tg.toLowerCase()); b.textContent=tg; b.style.marginLeft="8px"; p.appendChild(b); }
-      card.appendChild(p);
-      var a=el("p","ans"+(r.text?"":" blank"), r.text||"(left blank) · "+r.seconds+"s");
-      if(r.text) a.textContent=r.text;
-      card.appendChild(a);
-      var flags=analyse(r.text), tf=timeFlag(r);
-      if(flags.length||tf){ var ch=el("div","chips"); flags.forEach(function(f){ ch.appendChild(el("span","chip",f.t)); }); if(tf) ch.appendChild(el("span","chip time",tf)); card.appendChild(ch); }
-      rev.appendChild(card);
-    });
-
     // self-audit checklist
     var cl=$("t-checklist-items"); cl.innerHTML="";
     (CFG.checklist||[]).forEach(function(q){
@@ -162,8 +135,10 @@
       data.items.forEach(function(it){
         var d=el("div","ai-item");
         d.appendChild(el("div","qn","#"+(it.n||"")+"  "+(it.prompt||"")));
+        var resp=(S.responses[(it.n||0)-1]||{}).text;
+        var yr=el("p","ai-your"); yr.appendChild(el("strong",null,"Your response: ")); yr.appendChild(document.createTextNode(resp||"(left blank)")); d.appendChild(yr);
         if(it.comment) d.appendChild(el("p",null,it.comment));
-        if(it.suggestion){ var s=el("p"); s.appendChild(el("strong",null,"Sharper: ")); var span=el("span","sugg",it.suggestion); s.appendChild(span); d.appendChild(s); }
+        if(it.suggestion){ var s=el("p"); s.appendChild(el("strong",null,"Better alternative: ")); var span=el("span","sugg",it.suggestion); s.appendChild(span); d.appendChild(s); }
         body.appendChild(d);
       });
     }

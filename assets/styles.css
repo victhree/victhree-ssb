@@ -202,6 +202,7 @@ tbody tr:nth-child(even),tbody tr:nth-child(even){background:var(--paper-2)}
 .ai-box .ai-status{font-family:var(--sans);font-size:.9rem;color:var(--ink-soft)}
 .ai-box .ai-item{border-top:1px solid var(--line);padding-top:10px;margin-top:12px}
 .ai-box .ai-item .qn{font-family:var(--sans);font-weight:700;color:var(--navy);font-size:.85rem}
+.ai-box .ai-item .ai-your{color:var(--ink-soft);margin:.25em 0}
 .ai-box .sugg{color:var(--ok)}
 .spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--line-2);border-top-color:var(--navy);border-radius:50%;animation:spin .8s linear infinite;vertical-align:middle;margin-right:8px}
 @keyframes spin{to{transform:rotate(360deg)}}
