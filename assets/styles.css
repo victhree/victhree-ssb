@@ -214,6 +214,9 @@ tbody tr:nth-child(even),tbody tr:nth-child(even){background:var(--paper-2)}
 .t-stat .l{font-family:var(--sans);font-size:.74rem;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft)}
 .ai-box{background:#fff;border:1px solid var(--line);border-left:5px solid var(--navy);border-radius:12px;padding:18px 20px;margin:18px 0}
 .ai-box h3{margin-top:0;color:var(--navy)}
+.ai-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.ai-head h3{margin:0}
+.ai-dl{font-size:.85rem;padding:9px 16px;white-space:nowrap}
 .ai-box .ai-tagline{font-family:var(--sans);font-size:.76rem;color:var(--ink-soft)}
 .ai-box .ai-status{font-family:var(--sans);font-size:.9rem;color:var(--ink-soft)}
 .ai-box .ai-item{border-top:1px solid var(--line);padding-top:10px;margin-top:12px}
