@@ -143,13 +143,13 @@
   function requestAI(){
     var box=$("t-ai"); box.style.display="block";
     var status=$("ai-status");
-    status.innerHTML='<span class="spinner"></span>Sending your responses to Gemini for analysis…';
+    status.innerHTML='<span class="spinner"></span>Analysing your responses… this may take a few moments.';
     $("ai-body").innerHTML="";
     var payload={ mode:CFG.mode, items:S.responses.map(function(r,i){ return { n:i+1, prompt:promptOf(r.item), tag:tagOf(r.item), response:r.text, seconds:r.seconds }; }) };
     fetch(AI, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload) })
       .then(function(res){ if(!res.ok) throw new Error("HTTP "+res.status); return res.json(); })
       .then(renderAI)
-      .catch(function(err){ status.textContent="Gemini analysis unavailable right now ("+err.message+"). Your self-review below still works — or use the copy button to analyse elsewhere."; });
+      .catch(function(err){ status.textContent="Your performance analysis isn't available right now. Your self-review below still works."; });
   }
   function renderAI(data){
     $("ai-status").textContent="";
@@ -209,7 +209,7 @@
     $("t-skip").addEventListener("click", skip);
     $("t-quit").addEventListener("click", function(){ clearInterval(S.tick); panel("t-intro"); });
     $("t-restart").addEventListener("click", function(){ panel("t-intro"); });
-    $("t-copy").addEventListener("click", copyText);
+    var copyBtn=$("t-copy"); if(copyBtn) copyBtn.addEventListener("click", copyText);
     $("t-input").addEventListener("keydown", function(e){ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); commit(); } });
     if(hasSaved()){ var link=$("t-resume"); link.style.display="inline-block"; link.addEventListener("click", function(e){ e.preventDefault(); loadSaved(); }); }
     if(!AI){ var hint=$("ai-off-hint"); if(hint) hint.style.display="block"; }
