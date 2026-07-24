@@ -66,11 +66,17 @@ main{padding:34px 0 30px}
 .home-title{text-align:center;margin:34px 0 28px;font-size:clamp(1.15rem,5.4vw,2.4rem);text-transform:uppercase;letter-spacing:.02em;color:var(--navy);white-space:nowrap}
 .cards.home-cards{max-width:640px;margin:0 auto;grid-template-columns:1fr 1fr;gap:16px}
 .cards.home-cards .card{text-align:center;padding:26px 16px}
-.cards.home-cards .card h3{margin:0;font-size:clamp(0.95rem,2.2vw,1.15rem);white-space:nowrap}
+.cards.home-cards .card h3{margin:0;font-size:clamp(1.05rem,2.8vw,1.3rem);white-space:nowrap}
 .card-abbr{display:block;margin-top:8px;font-family:var(--sans);font-weight:700;letter-spacing:.14em;color:var(--gold);font-size:1.1rem}
 .home-more{text-align:center;margin:24px 0 0}
 .home-more a{font-family:var(--sans);font-weight:600;font-size:.95rem;color:var(--navy);text-decoration:underline;text-underline-offset:3px}
 .home-more a:hover{color:var(--gold)}
+@media(max-width:600px){
+  main{padding-top:16px}
+  .cta{margin-top:4px}
+  .home-more{margin-top:36px}
+  .cards.home-cards .card h3{font-size:1.25rem}
+}
 @media(max-width:600px){.cards.home-cards{grid-template-columns:1fr;max-width:420px}}
 
 /* CDS CTA (matches vocab/mocks sites) */
