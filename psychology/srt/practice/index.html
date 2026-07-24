@@ -11,42 +11,37 @@
 <header class="topbar">
   <div class="wrap">
     <a class="brand" href="../../../index.html"><img class="brand-img" src="../../../assets/banner.png" alt="VicThree Defence — by Anmol Sharma" /></a>
-    <nav class="nav">
-      <a href="../../../index.html">Home</a>
-      <a href="../../index.html">Psychology</a>
-      <a href="../../wat/index.html">WAT</a>
-      <a href="../index.html" class="active">SRT</a>
-      <a href="../../../about/index.html">About</a>
-    </nav>
   </div>
 </header>
 
 <main>
   <div class="wrap">
-    <p class="breadcrumb"><a href="../../../index.html">Home</a> › <a href="../../index.html">Psychology</a> › <a href="../index.html">SRT</a> › Practice</p>
-    <p class="eyebrow">Test Two · Practice</p>
-    <h1>SRT practice worksheet</h1>
-    <p class="approach-nav"><a href="../index.html">📘 How to approach SRT →</a></p>
+    <div class="trainer-head">
+      <div>
+        <p class="eyebrow">Practice</p>
+        <h1>Situation Reaction Test</h1>
+      </div>
+      <a class="approach-link" href="../index.html">How to approach SRT</a>
+    </div>
 
     <!-- INTRO -->
     <section id="t-intro" class="t-panel active">
       <div class="t-instructions">
-        <p><strong>~30 seconds each, 1–2 lines of concrete action.</strong> Each situation carries a tag naming its structure — spot it first, then respond. Watch for the double-binds (tagged <span class="tag bind">BIND</span>).</p>
-        <p class="small muted">Name a concrete action (a verb). Use available resources — don't become a superhero. For every BIND, step outside the two options and find the third path.</p>
+        <p>Read the situation and write the first practical response you would take. Keep it brief, realistic, and action-oriented. You get 30 seconds to respond to each situation.</p>
       </div>
       <div class="t-controls">
-        <label>How many situations?
+        <label class="t-count-label" for="t-count">Choose the number of situations</label>
+        <div class="t-count-row">
           <select id="t-count">
-            <option value="10">10</option>
-            <option value="20">20</option>
-            <option value="30" selected>30</option>
-            <option value="60">60</option>
-            <option value="0">All 200</option>
+            <option value="10">10 situations</option>
+            <option value="20">20 situations</option>
+            <option value="30" selected>30 situations</option>
+            <option value="60">60 situations</option>
+            <option value="0">All 200 situations</option>
           </select>
-        </label>
-        <label><input type="checkbox" id="t-shuffle" checked /> Shuffle order</label>
+          <button id="t-start" class="btn primary">Start</button>
+        </div>
       </div>
-      <button id="t-start" class="btn primary">Start</button>
       <p style="margin-top:14px"><a href="#" id="t-resume" class="link-btn" style="display:none">View your last session's review →</a></p>
     </section>
 
@@ -103,10 +98,6 @@
       <p id="t-copynote" class="copy-note" style="display:none">Copied! Paste into any AI for a detailed OLQ analysis.</p>
     </section>
 
-    <div class="page-foot-nav">
-      <a href="../personal/index.html">← Competing Priorities</a>
-      <a href="../../wat/practice/index.html">WAT Practice →</a>
-    </div>
   </div>
 </main>
 

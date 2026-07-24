@@ -11,42 +11,37 @@
 <header class="topbar">
   <div class="wrap">
     <a class="brand" href="../../../index.html"><img class="brand-img" src="../../../assets/banner.png" alt="VicThree Defence — by Anmol Sharma" /></a>
-    <nav class="nav">
-      <a href="../../../index.html">Home</a>
-      <a href="../../index.html">Psychology</a>
-      <a href="../index.html" class="active">WAT</a>
-      <a href="../../srt/index.html">SRT</a>
-      <a href="../../../about/index.html">About</a>
-    </nav>
   </div>
 </header>
 
 <main>
   <div class="wrap">
-    <p class="breadcrumb"><a href="../../../index.html">Home</a> › <a href="../../index.html">Psychology</a> › <a href="../index.html">WAT</a> › Practice</p>
-    <p class="eyebrow">Test One · Practice</p>
-    <h1>WAT practice worksheet</h1>
-    <p class="approach-nav"><a href="../index.html">📘 How to approach WAT →</a></p>
+    <div class="trainer-head">
+      <div>
+        <p class="eyebrow">Practice</p>
+        <h1>Word Association Test</h1>
+      </div>
+      <a class="approach-link" href="../index.html">How to approach WAT</a>
+    </div>
 
     <!-- INTRO -->
     <section id="t-intro" class="t-panel active">
       <div class="t-instructions">
-        <p><strong>15 seconds per word.</strong> Write the first meaningful sentence — don't curate. Words are a mix of positive (P), negative (N) and neutral (X). After the set, self-audit: any robotic flips? any hero-"I"? any pile-up?</p>
-        <p class="small muted">There are no "correct" answers. The goal is an honest, positive, doable reflex — not a memorised bank.</p>
+        <p>Write the first natural thought that comes to mind when you see the word. Keep it short, clear, and action-oriented. You get 15 seconds for each word.</p>
       </div>
       <div class="t-controls">
-        <label>How many words?
+        <label class="t-count-label" for="t-count">Choose the number of words</label>
+        <div class="t-count-row">
           <select id="t-count">
-            <option value="10">10</option>
-            <option value="20">20</option>
-            <option value="30" selected>30</option>
-            <option value="60">60</option>
-            <option value="0">All 200</option>
+            <option value="10">10 words</option>
+            <option value="20">20 words</option>
+            <option value="30" selected>30 words</option>
+            <option value="60">60 words</option>
+            <option value="0">All 200 words</option>
           </select>
-        </label>
-        <label><input type="checkbox" id="t-shuffle" checked /> Shuffle order</label>
+          <button id="t-start" class="btn primary">Start</button>
+        </div>
       </div>
-      <button id="t-start" class="btn primary">Start</button>
       <p style="margin-top:14px"><a href="#" id="t-resume" class="link-btn" style="display:none">View your last session's review →</a></p>
     </section>
 
@@ -103,10 +98,6 @@
       <p id="t-copynote" class="copy-note" style="display:none">Copied! Paste into any AI for a detailed OLQ analysis.</p>
     </section>
 
-    <div class="page-foot-nav">
-      <a href="../positive-trap/index.html">← Positive-Word Trap</a>
-      <a href="../../srt/practice/index.html">SRT Practice →</a>
-    </div>
   </div>
 </main>
 

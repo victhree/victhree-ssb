@@ -63,10 +63,17 @@ main{padding:34px 0 30px}
 .hero .sub{color:var(--gold-soft);font-size:1.2rem;max-width:52ch;margin-top:.2em}
 .hero .cta{display:inline-block;margin-top:18px;background:var(--gold);color:var(--navy);font-family:var(--sans);font-weight:700;text-decoration:none;padding:12px 24px;border-radius:8px}
 .hero .cta:hover{background:#cfa53c}
-.home-title{text-align:center;margin:34px 0 26px;font-size:2rem}
-.approach-nav{margin:0 0 20px}
-.approach-nav a{display:inline-block;font-family:var(--sans);font-weight:700;font-size:.9rem;background:var(--paper-2);border:1px solid var(--line-2);border-radius:8px;padding:10px 16px;text-decoration:none;color:var(--navy)}
-.approach-nav a:hover{border-color:var(--gold);color:var(--gold)}
+.home-title{text-align:center;margin:36px 0 30px;font-size:2.7rem;text-transform:uppercase;letter-spacing:.04em;color:var(--navy)}
+.home-cards{max-width:660px;margin:0 auto}
+.home-cards .card{text-align:center;padding:36px 24px}
+.home-cards .card h3{margin:0;font-size:1.55rem}
+.card-abbr{display:block;margin-top:8px;font-family:var(--sans);font-weight:700;letter-spacing:.14em;color:var(--gold);font-size:.9rem}
+
+.trainer-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:6px}
+.trainer-head h1{margin:0}
+.trainer-head .eyebrow{margin-bottom:.2em}
+.approach-link{font-family:var(--sans);font-weight:700;font-size:.95rem;color:var(--gold);text-decoration:none;white-space:nowrap;padding-bottom:8px}
+.approach-link:hover{color:var(--gold);text-decoration:underline}
 
 /* ---------- cards ---------- */
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;margin:26px 0}
@@ -136,11 +143,13 @@ tbody tr:nth-child(even),tbody tr:nth-child(even){background:var(--paper-2)}
 /* ---------- trainer ---------- */
 .t-panel{display:none}
 .t-panel.active{display:block}
-.t-instructions{background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px 22px;margin:20px 0}
-.t-instructions ul{margin:.4em 0}
-.t-controls{display:flex;flex-wrap:wrap;gap:16px 22px;align-items:center;margin:18px 0}
-.t-controls label{font-family:var(--sans);font-size:.9rem;display:flex;align-items:center;gap:8px}
-.t-controls select{font:inherit;font-size:.9rem;padding:6px 10px;border:1px solid var(--line-2);border-radius:8px;background:#fff;color:var(--ink)}
+.t-instructions{background:var(--navy);color:var(--paper);border:1px solid var(--navy-2);border-radius:12px;padding:22px 24px;margin:22px 0;font-size:1.08rem;line-height:1.6}
+.t-instructions p{margin:0}
+.t-controls{margin:22px 0}
+.t-count-label{display:block;font-family:var(--sans);font-weight:600;font-size:1rem;margin-bottom:10px}
+.t-count-row{display:flex;gap:14px;align-items:stretch}
+.t-count-row select{flex:1;font:inherit;font-size:1.05rem;padding:14px 16px;border:1px solid var(--line-2);border-radius:10px;background:#fff;color:var(--ink)}
+.t-count-row .btn{flex:1;font-size:1.05rem;padding:14px 16px}
 .btn{font-family:var(--sans);font-weight:700;border-radius:9px;padding:12px 24px;border:1px solid transparent;cursor:pointer;font-size:1rem}
 .btn.primary{background:var(--gold);color:var(--navy)}
 .btn.primary:hover{background:#cfa53c}
