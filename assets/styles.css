@@ -71,19 +71,20 @@ main{padding:34px 0 30px}
 @media(max-width:600px){.cards.home-cards{grid-template-columns:1fr;max-width:420px}}
 
 /* CDS CTA (matches vocab/mocks sites) */
-.cta{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;background:linear-gradient(135deg,var(--navy),var(--navy-2));color:#fff;border-radius:14px;padding:14px 20px;margin:26px 0 0;text-align:center;box-shadow:0 8px 22px rgba(15,35,64,.12)}
-.cta-text{font-family:var(--sans);font-size:15px;font-weight:600;color:#fff;line-height:1.45}
-.cta-social{display:flex;gap:16px;align-items:center}
-.cta-social a{color:var(--gold-soft);display:inline-flex;line-height:0;text-decoration:none;transition:color .12s,transform .12s}
+.cta-wrap{max-width:860px;margin:0 auto;padding:0 22px}
+.cta{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;background:linear-gradient(135deg,var(--navy),var(--navy-2));color:#fff;border-radius:14px;padding:14px 18px;margin:26px 0 0;text-align:center;box-shadow:0 8px 22px rgba(15,35,64,.12)}
+.cta-text{font-family:var(--sans);font-size:14px;font-weight:600;color:#fff;line-height:1.45}
+.cta-social{display:flex;gap:16px;align-items:center;flex-wrap:nowrap}
+.cta-social a{color:#d4a94a;display:inline-flex;line-height:0;text-decoration:none;transition:color .12s,transform .12s}
 .cta-social a:hover{color:#fff;transform:translateY(-2px)}
 .m-br{display:none}
 @media(max-width:600px){.m-br{display:inline}}
 
-.trainer-head{text-align:left;margin-bottom:18px}
+.trainer-head{text-align:center;margin-bottom:18px}
 .trainer-head h1{margin:.1em 0}
 .trainer-head .eyebrow{margin-bottom:.2em}
-.t-sub{color:var(--ink-soft);font-family:var(--sans);font-size:1rem;line-height:1.6;max-width:64ch;margin:.5em 0 0}
-.approach-wrap{text-align:left;margin:16px 0 26px}
+.t-sub{color:var(--ink-soft);font-family:var(--sans);font-size:1rem;line-height:1.6;max-width:56ch;margin:.6em auto 0}
+.approach-wrap{text-align:center;margin:18px 0 26px}
 .approach-tile{display:inline-block;background:var(--gold);color:var(--navy);font-family:var(--sans);font-weight:700;font-size:.95rem;text-decoration:none;padding:12px 24px;border-radius:10px}
 .approach-tile:hover{background:#cfa53c;color:var(--navy)}
 
@@ -159,8 +160,8 @@ tbody tr:nth-child(even),tbody tr:nth-child(even){background:var(--paper-2)}
 /* ---------- trainer ---------- */
 .t-panel{display:none}
 .t-panel.active{display:block}
-.t-controls{margin:22px 0 0;max-width:560px}
-.t-count-label{display:block;text-align:left;font-family:var(--sans);font-weight:600;font-size:1rem;margin-bottom:10px}
+.t-controls{margin:22px auto 0;max-width:520px;text-align:center}
+.t-count-label{display:block;text-align:center;font-family:var(--sans);font-weight:600;font-size:1rem;margin-bottom:10px}
 .t-count-row{display:flex;gap:14px;align-items:stretch}
 #t-resume{margin-top:12px}
 .t-count-row select{flex:1 1 0;min-width:0;font-family:var(--sans);font-size:1.05rem;padding:14px 16px;border:1px solid var(--line-2);border-radius:10px;background:#fff;color:var(--ink)}
