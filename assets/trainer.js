@@ -6,7 +6,7 @@
        items: [...],               // from data/*-practice.js
        checklist: ["...", "..."]   // self-audit questions
      }
-   AI analysis is optional and controlled by window.VICTHREE_CONFIG.aiEndpoint (config.js). */
+   Performance analysis is optional and controlled by window.VICTHREE_CONFIG.aiEndpoint (config.js). */
 (function () {
   "use strict";
   var CFG = window.TRAINER || {};
@@ -139,7 +139,7 @@
     });
   }
 
-  /* ---------- AI (Gemini via Worker) ---------- */
+  /* ---------- Performance analysis (via Worker) ---------- */
   function requestAI(){
     var box=$("t-ai"); box.style.display="block";
     var status=$("ai-status");
@@ -170,7 +170,7 @@
     if(!body.childNodes.length) body.appendChild(el("p",null,"(No analysis returned.)"));
   }
 
-  /* ---------- copy for AI ---------- */
+  /* ---------- copy responses (helper) ---------- */
   function copyText(){
     var lines=[];
     lines.push("You are an experienced SSB (Services Selection Board) psychologist.");
