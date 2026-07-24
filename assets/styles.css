@@ -177,12 +177,12 @@ tbody tr:nth-child(even),tbody tr:nth-child(even){background:var(--paper-2)}
 /* ---------- trainer ---------- */
 .t-panel{display:none}
 .t-panel.active{display:block}
-.t-controls{margin:22px 0 0;max-width:520px;text-align:left}
-.t-count-label{display:block;text-align:left;font-family:var(--sans);font-weight:600;font-size:1rem;margin-bottom:10px}
+.t-controls{margin:26px auto 0;max-width:580px;text-align:center}
+.t-count-label{display:block;text-align:center;font-family:var(--sans);font-weight:600;font-size:1.2rem;margin-bottom:14px}
 .t-count-row{display:flex;gap:14px;align-items:stretch}
 #t-resume{display:inline-block;margin-top:22px}
-.t-count-row select{flex:1 1 0;min-width:0;font-family:var(--sans);font-size:1.05rem;padding:14px 16px;border:1px solid var(--line-2);border-radius:10px;background:#fff;color:var(--ink)}
-.t-count-row .btn{flex:1 1 0;min-width:0;font-size:1.05rem;padding:14px 16px}
+.t-count-row select{flex:1 1 0;min-width:0;font-family:var(--sans);font-size:1.18rem;padding:17px 20px;border:1px solid var(--line-2);border-radius:10px;background:#fff;color:var(--ink)}
+.t-count-row .btn{flex:1 1 0;min-width:0;font-size:1.18rem;padding:17px 20px}
 .btn{font-family:var(--sans);font-weight:700;border-radius:9px;padding:12px 24px;border:1px solid transparent;cursor:pointer;font-size:1rem}
 .btn.primary{background:var(--gold);color:var(--navy)}
 .btn.primary:hover{background:#cfa53c}
