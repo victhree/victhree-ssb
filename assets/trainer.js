@@ -198,10 +198,11 @@
     var testName = mode==="SRT" ? "Situation Reaction Test (SRT)" : "Word Association Test (WAT)";
     var when = new Date().toLocaleString();
     var attempted = R.filter(function(r){return r.text.length>0;}).length;
+    var docTitle = "VicThree-SSB-"+mode+"-Report";
     var p=[];
     p.push('<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">');
-    p.push('<title>VicThree SSB — '+mode+' Performance Report</title>');
-    p.push('<style>body{font-family:Georgia,serif;color:#1c2331;max-width:820px;margin:26px auto;padding:0 22px;line-height:1.6}h1{color:#0f2340;margin:0}h2{color:#0f2340;margin-top:1.5em}h4{margin:0 0 .4em}.banner{background:#0f2340;text-align:center;padding:12px 16px;border-radius:10px;margin:0 0 22px}.banner img{max-width:520px;width:100%;height:auto;display:block;margin:0 auto}.meta{color:#4a5265;font-family:Arial,sans-serif;font-size:14px;margin:.3em 0 1.2em}.stat{font-family:Arial,sans-serif}.card{border:1px solid #e2ddcd;border-radius:10px;padding:14px 18px;margin:14px 0}.snapshot{background:#eef2f8}.snapshot h4{color:#0f2340}.reflected{background:#eef4ec}.reflected h4{color:#3f6b3a}.work{background:#f8f2e2}.work h4{color:#8a6d1e}.card ul{margin:.3em 0 0;padding-left:20px}.item{border-top:1px solid #eee;padding-top:10px;margin-top:12px}.qn{font-family:Arial,sans-serif;font-weight:700;color:#0f2340}.your{color:#4a5265}.sugg{color:#3f6b3a}.note{color:#4a5265;font-family:Arial,sans-serif;font-size:13px;border-top:1px solid #e2ddcd;margin-top:26px;padding-top:12px}</style>');
+    p.push('<title>'+docTitle+'</title>');
+    p.push('<style>*{-webkit-print-color-adjust:exact;print-color-adjust:exact}@page{margin:14mm}body{font-family:Georgia,serif;color:#1c2331;max-width:820px;margin:26px auto;padding:0 22px;line-height:1.6}h1{color:#0f2340;margin:0}h2{color:#0f2340;margin-top:1.5em}h4{margin:0 0 .4em}.banner{background:#0f2340;text-align:center;padding:12px 16px;border-radius:10px;margin:0 0 22px}.banner img{max-width:520px;width:100%;height:auto;display:block;margin:0 auto}.meta{color:#4a5265;font-family:Arial,sans-serif;font-size:14px;margin:.3em 0 1.2em}.stat{font-family:Arial,sans-serif}.card{border:1px solid #e2ddcd;border-radius:10px;padding:14px 18px;margin:14px 0;break-inside:avoid}.snapshot{background:#eef2f8}.snapshot h4{color:#0f2340}.reflected{background:#eef4ec}.reflected h4{color:#3f6b3a}.work{background:#f8f2e2}.work h4{color:#8a6d1e}.card ul{margin:.3em 0 0;padding-left:20px}.item{border-top:1px solid #eee;padding-top:10px;margin-top:12px;break-inside:avoid}.qn{font-family:Arial,sans-serif;font-weight:700;color:#0f2340}.your{color:#4a5265}.sugg{color:#3f6b3a}.note{color:#4a5265;font-family:Arial,sans-serif;font-size:13px;border-top:1px solid #e2ddcd;margin-top:26px;padding-top:12px}</style>');
     p.push('</head><body>');
     if(banner) p.push('<div class="banner"><img src="'+banner+'" alt="VicThree Defence"></div>');
     p.push('<h1>Performance Report</h1>');
@@ -224,13 +225,14 @@
       p.push('</div>');
     });
     p.push('<p class="note">There are no official correct answers in the SSB psychology tests. This report is guidance to help improve your performance, not a verdict.</p>');
+    // Open a print-ready window and trigger the browser's Save-as-PDF.
+    p.push('<script>window.onload=function(){setTimeout(function(){window.focus();window.print();},400);};window.onafterprint=function(){window.close();};<\/script>');
     p.push('</body></html>');
-    var blob=new Blob([p.join("")], {type:"text/html"});
-    var url=URL.createObjectURL(blob);
-    var a=document.createElement("a");
-    a.href=url; a.download="VicThree-SSB-"+mode+"-Report.html";
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    setTimeout(function(){ URL.revokeObjectURL(url); }, 1500);
+    var win=window.open("", "_blank");
+    if(!win){ alert("Please allow pop-ups for this site, then tap Download Report again to save your PDF."); return; }
+    win.document.open();
+    win.document.write(p.join(""));
+    win.document.close();
   }
 
   /* ---------- wire ---------- */
