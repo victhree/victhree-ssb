@@ -191,7 +191,7 @@ tbody tr:nth-child(even),tbody tr:nth-child(even){background:var(--paper-2)}
 .link-btn{font-family:var(--sans);background:none;border:none;color:var(--navy);text-decoration:underline;text-underline-offset:3px;cursor:pointer;font-size:.9rem}
 .link-btn:hover{color:var(--gold)}
 
-.t-head{position:sticky;top:0;z-index:30;background:var(--paper);margin:0 0 16px;padding:10px 0;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px}
+.t-head{position:sticky;top:0;z-index:30;background:var(--paper);margin:0 0 16px;padding:9px 0;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;line-height:1}
 .t-count{font-family:var(--sans);color:var(--ink-soft);font-size:.9rem;font-variant-numeric:tabular-nums;white-space:nowrap}
 .t-bar{flex:1;height:8px;background:var(--paper-2);border:1px solid var(--line);border-radius:20px;overflow:hidden}
 .t-bar > div{height:100%;width:0;background:var(--gold);transition:width .3s}
