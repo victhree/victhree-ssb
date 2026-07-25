@@ -247,5 +247,14 @@
     $("t-input").addEventListener("keydown", function(e){ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); commit(); } });
     if(hasSaved()){ var link=$("t-resume"); link.style.display="inline-block"; link.addEventListener("click", function(e){ e.preventDefault(); loadSaved(); }); }
     if(!AI){ var hint=$("ai-off-hint"); if(hint) hint.style.display="block"; }
+    // Keep the timer/progress header aligned to the top of the visible area
+    // when the on-screen keyboard opens (safety net for browsers that pin
+    // sticky elements to the layout viewport rather than the visual one).
+    if(window.visualViewport){
+      var vv=window.visualViewport;
+      var pin=function(){ var h=$("t-head-el")||document.querySelector("#t-run .t-head"); if(h) h.style.top=Math.max(0, vv.offsetTop)+"px"; };
+      vv.addEventListener("resize", pin);
+      vv.addEventListener("scroll", pin);
+    }
   });
 })();
