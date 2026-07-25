@@ -180,59 +180,104 @@
     }catch(e){}
   }
 
-  /* ---------- download report ---------- */
-  function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+  /* ---------- download report (direct PDF via jsPDF, no print dialog) ---------- */
   function downloadReport(){
     var img=document.querySelector(".brand-img");
     if(img && img.src){
       fetch(img.src).then(function(r){return r.blob();}).then(function(b){
         var fr=new FileReader();
-        fr.onload=function(){ buildReport(fr.result); };
-        fr.onerror=function(){ buildReport(""); };
+        fr.onload=function(){ buildPdf(fr.result, img.naturalWidth||0, img.naturalHeight||0); };
+        fr.onerror=function(){ buildPdf(null,0,0); };
         fr.readAsDataURL(b);
-      }).catch(function(){ buildReport(""); });
-    } else { buildReport(""); }
+      }).catch(function(){ buildPdf(null,0,0); });
+    } else { buildPdf(null,0,0); }
   }
-  function buildReport(banner){
+  function buildPdf(banner, bw, bh){
+    var JS = window.jspdf && window.jspdf.jsPDF;
+    if(!JS){ alert("The PDF tool didn't finish loading. Please reconnect and tap Download PDF again."); return; }
     var R=S.responses, A=S.analysis, mode=CFG.mode;
     var testName = mode==="SRT" ? "Situation Reaction Test (SRT)" : "Word Association Test (WAT)";
     var when = new Date().toLocaleString();
     var attempted = R.filter(function(r){return r.text.length>0;}).length;
-    var docTitle = "VicThree-SSB-"+mode+"-Report";
-    var p=[];
-    p.push('<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">');
-    p.push('<title>'+docTitle+'</title>');
-    p.push('<style>*{-webkit-print-color-adjust:exact;print-color-adjust:exact}@page{margin:14mm}body{font-family:Georgia,serif;color:#1c2331;max-width:820px;margin:26px auto;padding:0 22px;line-height:1.6}h1{color:#0f2340;margin:0}h2{color:#0f2340;margin-top:1.5em}h4{margin:0 0 .4em}.banner{background:#0f2340;text-align:center;padding:12px 16px;border-radius:10px;margin:0 0 22px}.banner img{max-width:520px;width:100%;height:auto;display:block;margin:0 auto}.meta{color:#4a5265;font-family:Arial,sans-serif;font-size:14px;margin:.3em 0 1.2em}.stat{font-family:Arial,sans-serif}.card{border:1px solid #e2ddcd;border-radius:10px;padding:14px 18px;margin:14px 0;break-inside:avoid}.snapshot{background:#eef2f8}.snapshot h4{color:#0f2340}.reflected{background:#eef4ec}.reflected h4{color:#3f6b3a}.work{background:#f8f2e2}.work h4{color:#8a6d1e}.card ul{margin:.3em 0 0;padding-left:20px}.item{border-top:1px solid #eee;padding-top:10px;margin-top:12px;break-inside:avoid}.qn{font-family:Arial,sans-serif;font-weight:700;color:#0f2340}.your{color:#4a5265}.sugg{color:#3f6b3a}.note{color:#4a5265;font-family:Arial,sans-serif;font-size:13px;border-top:1px solid #e2ddcd;margin-top:26px;padding-top:12px}</style>');
-    p.push('</head><body>');
-    if(banner) p.push('<div class="banner"><img src="'+banner+'" alt="VicThree Defence"></div>');
-    p.push('<h1>Performance Report</h1>');
-    p.push('<p class="meta">'+testName+' &middot; '+esc(when)+'</p>');
-    p.push('<p class="stat">Attempted '+attempted+' of '+R.length+'.</p>');
-    if(A){
-      if(A.summary){ p.push('<div class="card snapshot"><h4>Personality snapshot</h4><p>'+esc(A.summary)+'</p></div>'); }
-      var refl=A.olqs_reflected||A.strengths;
-      if(refl&&refl.length){ p.push('<div class="card reflected"><h4>Officer-Like Qualities reflected</h4><ul>'+refl.map(function(s){return '<li>'+esc(s)+'</li>';}).join('')+'</ul></div>'); }
-      var work=A.olqs_to_work_on||A.improve;
-      if(work&&work.length){ p.push('<div class="card work"><h4>OLQs to work on</h4><ul>'+work.map(function(s){return '<li>'+esc(s)+'</li>';}).join('')+'</ul></div>'); }
+
+    var doc=new JS({unit:"pt", format:"a4"});
+    var PW=doc.internal.pageSize.getWidth(), PH=doc.internal.pageSize.getHeight();
+    var M=42, x=M, y=M, cw=PW-2*M;
+    var navy=[15,35,64], ink=[28,35,49], soft=[74,82,101], green=[63,107,58], gold2=[138,109,30];
+
+    function br(h){ if(y+h > PH-M){ doc.addPage(); y=M; } }
+    // wrapped text with per-line page breaks; advances y
+    function text(str, o){
+      o=o||{};
+      var size=o.size||11, lh=o.lh||Math.round(size*1.4), col=o.color||ink, font=o.font||"times", style=o.style||"normal";
+      var maxw=(o.maxw!=null?o.maxw:cw), xx=(o.x!=null?o.x:x);
+      doc.setFont(font,style); doc.setFontSize(size); doc.setTextColor(col[0],col[1],col[2]);
+      var arr=doc.splitTextToSize(String(str), maxw);
+      for(var i=0;i<arr.length;i++){ br(lh); doc.text(arr[i], xx, y+size*0.9); y+=lh; }
+      if(o.gap) y+=o.gap;
     }
-    p.push('<h2>Response-by-response</h2>');
+    // coloured card: title + optional paragraph + optional bullet list
+    function card(bg, headCol, title, bodyStr, bullets){
+      var pad=13, iw=cw-2*pad, lhT=14, lhB=15.4;
+      doc.setFont("helvetica","bold"); doc.setFontSize(10.5);
+      var tl=doc.splitTextToSize(title, iw);
+      doc.setFont("times","normal"); doc.setFontSize(11);
+      var bl = bodyStr ? doc.splitTextToSize(bodyStr, iw) : [];
+      var bu=[]; if(bullets){ bullets.forEach(function(s){ bu=bu.concat(doc.splitTextToSize("•  "+s, iw)); }); }
+      var h = pad + tl.length*lhT + 5 + (bl.length+bu.length)*lhB + pad;
+      if(y+h > PH-M){ doc.addPage(); y=M; }
+      doc.setFillColor(bg[0],bg[1],bg[2]); doc.roundedRect(x,y,cw,h,7,7,"F");
+      var cy=y+pad;
+      doc.setFont("helvetica","bold"); doc.setFontSize(10.5); doc.setTextColor(headCol[0],headCol[1],headCol[2]);
+      tl.forEach(function(t){ doc.text(t, x+pad, cy+9); cy+=lhT; });
+      cy+=5;
+      doc.setFont("times","normal"); doc.setFontSize(11); doc.setTextColor(ink[0],ink[1],ink[2]);
+      bl.forEach(function(t){ doc.text(t, x+pad, cy+9); cy+=lhB; });
+      bu.forEach(function(t){ doc.text(t, x+pad, cy+9); cy+=lhB; });
+      y += h + 13;
+    }
+
+    // Banner on a navy bar
+    if(banner && bw>0 && bh>0){
+      var bpad=14, iw=cw-2*bpad, ih=iw*(bh/bw), rectH=ih+2*bpad;
+      br(rectH+8);
+      doc.setFillColor(navy[0],navy[1],navy[2]); doc.roundedRect(x,y,cw,rectH,8,8,"F");
+      try{ doc.addImage(banner,"PNG", x+bpad, y+bpad, iw, ih); }catch(e){}
+      y += rectH + 16;
+    }
+    // Title, meta, stat
+    text("Performance Report", {font:"times", style:"bold", size:22, color:navy, lh:26});
+    text(testName+"   ·   "+when, {font:"helvetica", style:"normal", size:9.5, color:soft, lh:14, gap:4});
+    text("Attempted "+attempted+" of "+R.length+".", {font:"times", style:"normal", size:11.5, color:ink, gap:10});
+
+    // Analysis cards
+    if(A){
+      if(A.summary) card([238,242,248], navy, "Personality snapshot", A.summary, null);
+      var refl=A.olqs_reflected||A.strengths;
+      if(refl&&refl.length) card([238,244,236], green, "Officer-Like Qualities reflected", null, refl);
+      var work=A.olqs_to_work_on||A.improve;
+      if(work&&work.length) card([248,242,226], gold2, "OLQs to work on", null, work);
+    }
+
+    // Response-by-response
+    y+=4;
+    text("Response-by-response", {font:"times", style:"bold", size:15, color:navy, lh:20, gap:2});
     R.forEach(function(r,i){
-      var it = (A && A.items) ? A.items.filter(function(x){return x.n===(i+1);})[0] : null;
-      p.push('<div class="item"><div class="qn">#'+(i+1)+'&nbsp; '+esc(promptOf(r.item))+'</div>');
-      p.push('<p class="your"><b>Your response:</b> '+esc(r.text||"(left blank)")+'</p>');
-      if(it && it.comment) p.push('<p>'+esc(it.comment)+'</p>');
-      if(it && it.suggestion) p.push('<p><b>Better alternative:</b> <span class="sugg">'+esc(it.suggestion)+'</span></p>');
-      p.push('</div>');
+      var it=(A&&A.items)?A.items.filter(function(z){return z.n===(i+1);})[0]:null;
+      br(30);
+      y+=5; doc.setDrawColor(228,225,214); doc.setLineWidth(0.6); doc.line(x,y,x+cw,y); y+=9;
+      text("#"+(i+1)+"   "+promptOf(r.item), {font:"helvetica", style:"bold", size:10.5, color:navy, lh:14});
+      text("Your response: "+(r.text||"(left blank)"), {font:"times", style:"normal", size:11, color:soft});
+      if(it&&it.comment) text(it.comment, {font:"times", style:"normal", size:11, color:ink});
+      if(it&&it.suggestion) text("Better alternative: "+it.suggestion, {font:"times", style:"italic", size:11, color:green});
+      y+=3;
     });
-    p.push('<p class="note">There are no official correct answers in the SSB psychology tests. This report is guidance to help improve your performance, not a verdict.</p>');
-    // Open a print-ready window and trigger the browser's Save-as-PDF.
-    p.push('<script>window.onload=function(){setTimeout(function(){window.focus();window.print();},400);};window.onafterprint=function(){window.close();};<\/script>');
-    p.push('</body></html>');
-    var win=window.open("", "_blank");
-    if(!win){ alert("Please allow pop-ups for this site, then tap Download Report again to save your PDF."); return; }
-    win.document.open();
-    win.document.write(p.join(""));
-    win.document.close();
+
+    // Footer note
+    y+=8; br(30);
+    text("There are no official correct answers in the SSB psychology tests. This report is guidance to help improve your performance, not a verdict.", {font:"helvetica", style:"normal", size:9, color:soft, lh:13});
+
+    doc.save("VicThree-SSB-"+mode+"-Report.pdf");
   }
 
   /* ---------- wire ---------- */
