@@ -55,7 +55,7 @@ export default {
     } catch (e) {
       return json({ error: "Invalid JSON" }, 400, cors);
     }
-    const mode = payload && payload.mode === "SRT" ? "SRT" : "WAT";
+    const mode = payload && (payload.mode === "SRT" || payload.mode === "SDT") ? payload.mode : "WAT";
     const items = Array.isArray(payload && payload.items) ? payload.items.slice(0, 80) : [];
     if (!items.length) return json({ error: "No items" }, 400, cors);
 
@@ -123,6 +123,7 @@ export default {
 };
 
 function buildPrompt(mode, items) {
+  if (mode === "SDT") return buildSdtPrompt(items);
   const testName =
     mode === "SRT" ? "Situation Reaction Test (SRT)" : "Word Association Test (WAT)";
   const lines = items.map((it) => {
@@ -147,6 +148,38 @@ function buildPrompt(mode, items) {
     ``,
     `=== Candidate's ${mode} responses ===`,
     ...lines
+  ].join("\n");
+}
+
+function buildSdtPrompt(items) {
+  const parts = items.map((it) => {
+    return `#${it.n} — Prompt: ${it.prompt}\n   Answer: ${it.response || "[left blank]"}`;
+  });
+  return [
+    `You are an experienced, fair SSB (Services Selection Board) psychologist assessing a candidate's Self-Description Test (SDT), the written self-appraisal from the Day-2 psychology battery.`,
+    `In the SDT the candidate describes themselves from up to five viewpoints: (1) their parents, (2) their teachers, superiors or employers, (3) their friends, (4) their own honest opinion, and (5) the kind of person they want to become.`,
+    ``,
+    `The SDT is a cross-check on the rest of the candidate's personality. Judge it on:`,
+    `- Self-awareness and honesty: real, specific evidence rather than stacked adjectives.`,
+    `- Balance: genuine strengths paired with at least one moderate, owned, fixable weakness. A flawless self-portrait signals low self-awareness, not strength.`,
+    `- Internal consistency: the four outside views and the candidate's own opinion should add up to one coherent person.`,
+    `- A forward-looking, actionable fifth part that names concrete steps and, ideally, closes the loop with the weakness the candidate owned.`,
+    `- Brevity and clear structure.`,
+    `Watch for red flags: manufactured positivity or only-strengths answers, memorised or clichéd template language, self-contradiction between the parts, over-confession, and any disqualifying trait (aggression or short temper, dishonesty, substance use, a habit of quitting). Do not reward pretence, and do not punish an honest, moderate weakness.`,
+    ``,
+    `The 15 Officer-Like Qualities (OLQs) are: effective intelligence, reasoning ability, organising ability, power of expression, social adaptability, cooperation, sense of responsibility, initiative, self-confidence, speed of decision, ability to influence the group, liveliness, determination, courage, and stamina.`,
+    ``,
+    `Return ONLY valid JSON with this exact shape:`,
+    `{`,
+    `  "summary": "a 3-5 sentence personality analysis in the voice of an SSB psychologist: the candidate's self-awareness, emotional maturity, how consistent the five parts are with one another, and overall officer potential",`,
+    `  "olqs_reflected": ["<OLQ name> — brief evidence seen in the self-description"],`,
+    `  "olqs_to_work_on": ["<OLQ name> — brief, actionable note"],`,
+    `  "items": [ { "n": <number>, "prompt": "<short label for the viewpoint, e.g. Parents' opinion>", "comment": "one-sentence assessment of this part: honesty, evidence, balance and consistency", "suggestion": "one sharper, more authentic way to express this part, WITHOUT inventing new facts about the candidate's life" } ]`,
+    `}`,
+    `List 3-6 OLQs reflected and 2-4 to work on, naming actual OLQs from the list. Include an items entry for every prompt answered. Be honest, concise and constructive.`,
+    ``,
+    `=== Candidate's Self-Description responses ===`,
+    ...parts
   ].join("\n");
 }
 

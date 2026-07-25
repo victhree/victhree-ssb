@@ -64,8 +64,8 @@ main{padding:34px 0 30px}
 .hero .cta{display:inline-block;margin-top:18px;background:var(--gold);color:var(--navy);font-family:var(--sans);font-weight:700;text-decoration:none;padding:12px 24px;border-radius:8px}
 .hero .cta:hover{background:#cfa53c}
 .home-title{text-align:center;margin:34px 0 28px;font-size:clamp(1.15rem,5.4vw,2.4rem);text-transform:uppercase;letter-spacing:.02em;color:var(--navy);white-space:nowrap}
-.cards.home-cards{max-width:640px;margin:0 auto;grid-template-columns:1fr 1fr;gap:16px}
-.cards.home-cards .card{text-align:center;padding:26px 16px}
+.cards.home-cards{display:flex;flex-wrap:wrap;justify-content:center;max-width:660px;margin:0 auto;gap:16px}
+.cards.home-cards .card{text-align:center;padding:26px 16px;flex:0 1 312px}
 .cards.home-cards .card h3{margin:0;font-size:clamp(1.05rem,3vw,1.45rem);white-space:nowrap}
 .card-abbr{display:block;margin-top:8px;font-family:var(--sans);font-weight:700;letter-spacing:.14em;color:var(--gold);font-size:1.1rem}
 .home-more{text-align:center;margin:24px 0 0}
@@ -78,7 +78,7 @@ main{padding:34px 0 30px}
   .home-more .ml-q{display:block}
   .cards.home-cards .card h3{font-size:clamp(1.2rem,6vw,1.5rem)}
 }
-@media(max-width:600px){.cards.home-cards{grid-template-columns:1fr;max-width:420px}}
+@media(max-width:600px){.cards.home-cards{max-width:420px}.cards.home-cards .card{flex-basis:100%}}
 
 /* CDS CTA (matches vocab/mocks sites) */
 .cta-wrap{max-width:860px;margin:0 auto;padding:0 22px}
@@ -121,6 +121,8 @@ main{padding:34px 0 30px}
 .lesson-list .n{font-family:var(--sans);font-weight:800;color:var(--gold);font-size:1.1rem;min-width:1.5em}
 .lesson-list .t{font-weight:700;color:var(--navy)}
 .lesson-list .d{display:block;font-size:.9rem;color:var(--ink-soft);font-family:var(--serif);font-weight:400}
+.lesson-list.plain li{display:flex;gap:14px;align-items:flex-start;background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px 18px}
+.lesson-list.plain .t{display:block}
 
 /* ---------- callouts ---------- */
 .callout{border:1px solid var(--line-2);border-left:5px solid var(--gold);background:var(--paper-2);border-radius:8px;padding:16px 18px;margin:1.4em 0}
@@ -206,6 +208,14 @@ tbody tr:nth-child(even),tbody tr:nth-child(even){background:var(--paper-2)}
 .t-actions{display:flex;gap:12px;margin-top:14px}
 .t-actions .btn.primary{flex:1}
 .t-hint{font-family:var(--sans);color:var(--ink-soft);font-size:.82rem;margin-top:14px}
+
+/* SDT form (self-description: all prompts on one screen) */
+.sdt-form{display:flex;flex-direction:column;gap:20px}
+.sdt-item{display:flex;flex-direction:column;gap:9px}
+.sdt-q{font-family:var(--sans);font-weight:600;color:var(--navy);font-size:1rem;line-height:1.45;display:flex;gap:11px;align-items:flex-start}
+.sdt-n{flex:none;display:inline-flex;align-items:center;justify-content:center;width:25px;height:25px;border-radius:50%;background:var(--navy);color:#fff;font-size:.82rem;font-weight:700;margin-top:1px}
+.sdt-a{width:100%;background:#fff;border:1px solid var(--line-2);border-radius:10px;padding:12px 14px;font-family:var(--serif);font-size:1.05rem;line-height:1.5;resize:vertical}
+.sdt-a:focus{outline:none;border-color:var(--gold)}
 
 /* results */
 .t-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin:18px 0}

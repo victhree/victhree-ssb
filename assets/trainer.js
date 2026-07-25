@@ -20,12 +20,13 @@
   var VIOLENT = ["kill","killed","murder","stab","shoot","destroy","revenge","beat him","beat them","hit him","hit them",
     "slap","punch","bomb","curse"];
 
-  var S = { items: [], idx: 0, responses: [], remaining: 0, startTs: 0, tick: null, analysis: null };
+  var S = { items: [], idx: 0, responses: [], remaining: 0, startTs: 0, tick: null, analysis: null, formTotal: 0, formUsed: 0 };
 
   function $(id){ return document.getElementById(id); }
   function el(t,c,x){ var e=document.createElement(t); if(c)e.className=c; if(x!=null)e.textContent=x; return e; }
   function panel(id){ ["t-intro","t-run","t-results"].forEach(function(p){ $(p).classList.toggle("active", p===id); }); window.scrollTo(0,0); }
-  function promptOf(it){ return it.word!=null ? it.word : it.situation; }
+  function promptOf(it){ return it.word!=null ? it.word : (it.situation!=null ? it.situation : it.prompt); }
+  function suggLabel(){ return CFG.mode==="SDT" ? "Suggested refinement: " : "Better alternative: "; }
   function tagOf(it){ return it.tag || it.type || ""; }
   function shuffle(a){ a=a.slice(); for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i];a[i]=a[j];a[j]=t;} return a; }
 
@@ -67,6 +68,42 @@
   }
   function skip(){ $("t-input").value=""; commit(); }
 
+  /* ---------- form mode (SDT: all prompts on one screen, one global timer) ---------- */
+  function fmtClock(s){ var m=Math.floor(s/60), x=s%60; return m+":"+(x<10?"0":"")+x; }
+  function startForm(){
+    var sel=$("t-count");
+    var mins = sel ? parseInt(sel.value,10) : 15;
+    S.formTotal = (mins>0?mins:15)*60;
+    S.responses=[]; S.analysis=null;
+    var host=$("t-form"); host.innerHTML="";
+    (CFG.prompts||[]).forEach(function(q,i){
+      var block=el("div","sdt-item");
+      var lab=el("label","sdt-q"); lab.setAttribute("for","sdt-a"+i);
+      lab.appendChild(el("span","sdt-n",String(i+1)));
+      lab.appendChild(document.createTextNode(" "+q));
+      var ta=document.createElement("textarea"); ta.id="sdt-a"+i; ta.className="sdt-a"; ta.rows=4; ta.setAttribute("autocomplete","off");
+      block.appendChild(lab); block.appendChild(ta); host.appendChild(block);
+    });
+    panel("t-run");
+    S.remaining=S.formTotal; drawClock();
+    var first=$("sdt-a0"); if(first) first.focus();
+    clearInterval(S.tick); S.tick=setInterval(onFormTick,1000);
+  }
+  function drawClock(){
+    var t=$("t-timer"); if(t){ t.textContent=fmtClock(Math.max(0,S.remaining)); t.classList.toggle("low", S.remaining<=30); }
+    var pb=$("t-progress"); if(pb && pb.firstElementChild && S.formTotal){ pb.firstElementChild.style.width=Math.min(100,(1-S.remaining/S.formTotal)*100)+"%"; }
+  }
+  function onFormTick(){ S.remaining--; drawClock(); if(S.remaining<=0){ clearInterval(S.tick); finishForm(); } }
+  function finishForm(){
+    clearInterval(S.tick);
+    S.formUsed = S.formTotal - Math.max(0,S.remaining);
+    S.responses = (CFG.prompts||[]).map(function(q,i){
+      var ta=$("sdt-a"+i);
+      return { item:{prompt:q}, text: ta?ta.value.trim():"", seconds:0 };
+    });
+    finish();
+  }
+
   /* ---------- heuristics ---------- */
   function analyse(text){
     var f=[]; if(!text){ f.push({t:"Blank — no response"}); return f; }
@@ -86,7 +123,7 @@
   /* ---------- finish + results ---------- */
   function finish(){
     clearInterval(S.tick);
-    $("t-progress").firstElementChild.style.width="100%";
+    var pb=$("t-progress"); if(pb && pb.firstElementChild) pb.firstElementChild.style.width="100%";
     save();
     buildResults();
     panel("t-results");
@@ -96,13 +133,18 @@
   function buildResults(){
     var R=S.responses;
     var attempted=R.filter(function(r){return r.text.length>0;}).length;
-    var blanks=R.length-attempted;
-    var total=R.reduce(function(s,r){return s+r.seconds;},0);
-    var avg=R.length?total/R.length:0;
 
     var st=$("t-stats"); st.innerHTML="";
-    [["Attempted",attempted+" / "+R.length],["Left blank",blanks],["Avg time",avg.toFixed(1)+"s"],["Total",fmt(total)]]
-      .forEach(function(p){ var c=el("div","t-stat"); c.appendChild(el("div","n",String(p[1]))); c.appendChild(el("div","l",p[0])); st.appendChild(c); });
+    var pairs;
+    if(CFG.form){
+      pairs=[["Answered",attempted+" / "+R.length],["Time used",fmt(S.formUsed||0)]];
+    } else {
+      var blanks=R.length-attempted;
+      var total=R.reduce(function(s,r){return s+r.seconds;},0);
+      var avg=R.length?total/R.length:0;
+      pairs=[["Attempted",attempted+" / "+R.length],["Left blank",blanks],["Avg time",avg.toFixed(1)+"s"],["Total",fmt(total)]];
+    }
+    pairs.forEach(function(p){ var c=el("div","t-stat"); c.appendChild(el("div","n",String(p[1]))); c.appendChild(el("div","l",p[0])); st.appendChild(c); });
 
     // self-audit checklist
     var cl=$("t-checklist-items"); cl.innerHTML="";
@@ -141,7 +183,7 @@
         var resp=(S.responses[(it.n||0)-1]||{}).text;
         var yr=el("p","ai-your"); yr.appendChild(el("strong",null,"Your response: ")); yr.appendChild(document.createTextNode(resp||"(left blank)")); d.appendChild(yr);
         if(it.comment) d.appendChild(el("p",null,it.comment));
-        if(it.suggestion){ var s=el("p"); s.appendChild(el("strong",null,"Better alternative: ")); var span=el("span","sugg",it.suggestion); s.appendChild(span); d.appendChild(s); }
+        if(it.suggestion){ var s=el("p"); s.appendChild(el("strong",null,suggLabel())); var span=el("span","sugg",it.suggestion); s.appendChild(span); d.appendChild(s); }
         body.appendChild(d);
       });
     }
@@ -175,7 +217,7 @@
   function loadSaved(){
     try{
       var d=JSON.parse(localStorage.getItem(STORE_KEY)); if(!d) return;
-      S.responses=d.responses.map(function(x){ return { item: (CFG.mode==="WAT"?{word:x.prompt,type:x.tag}:{situation:x.prompt,tag:x.tag}), text:x.text, seconds:x.seconds }; });
+      S.responses=d.responses.map(function(x){ return { item: (CFG.form?{prompt:x.prompt}:(CFG.mode==="WAT"?{word:x.prompt,type:x.tag}:{situation:x.prompt,tag:x.tag})), text:x.text, seconds:x.seconds }; });
       buildResults(); panel("t-results");
     }catch(e){}
   }
@@ -196,7 +238,7 @@
     var JS = window.jspdf && window.jspdf.jsPDF;
     if(!JS){ alert("The PDF tool didn't finish loading. Please reconnect and tap Download PDF again."); return; }
     var R=S.responses, A=S.analysis, mode=CFG.mode;
-    var testName = mode==="SRT" ? "Situation Reaction Test (SRT)" : "Word Association Test (WAT)";
+    var testName = mode==="SRT" ? "Situation Reaction Test (SRT)" : (mode==="SDT" ? "Self-Description Test (SDT)" : "Word Association Test (WAT)");
     var when = new Date().toLocaleString();
     var attempted = R.filter(function(r){return r.text.length>0;}).length;
 
@@ -248,7 +290,7 @@
     // Title, meta, stat
     text("Performance Report", {font:"times", style:"bold", size:22, color:navy, lh:26});
     text(testName+"   ·   "+when, {font:"helvetica", style:"normal", size:9.5, color:soft, lh:14, gap:4});
-    text("Attempted "+attempted+" of "+R.length+".", {font:"times", style:"normal", size:11.5, color:ink, gap:10});
+    text((mode==="SDT"?"Answered ":"Attempted ")+attempted+" of "+R.length+".", {font:"times", style:"normal", size:11.5, color:ink, gap:10});
 
     // Analysis cards
     if(A){
@@ -261,7 +303,7 @@
 
     // Response-by-response
     y+=4;
-    text("Response-by-response", {font:"times", style:"bold", size:15, color:navy, lh:20, gap:2});
+    text(mode==="SDT"?"Prompt-by-prompt":"Response-by-response", {font:"times", style:"bold", size:15, color:navy, lh:20, gap:2});
     R.forEach(function(r,i){
       var it=(A&&A.items)?A.items.filter(function(z){return z.n===(i+1);})[0]:null;
       br(30);
@@ -269,7 +311,7 @@
       text("#"+(i+1)+"   "+promptOf(r.item), {font:"helvetica", style:"bold", size:10.5, color:navy, lh:14});
       text("Your response: "+(r.text||"(left blank)"), {font:"times", style:"normal", size:11, color:soft});
       if(it&&it.comment) text(it.comment, {font:"times", style:"normal", size:11, color:ink});
-      if(it&&it.suggestion) text("Better alternative: "+it.suggestion, {font:"times", style:"italic", size:11, color:green});
+      if(it&&it.suggestion) text(suggLabel()+it.suggestion, {font:"times", style:"italic", size:11, color:green});
       y+=3;
     });
 
@@ -282,9 +324,10 @@
 
   /* ---------- wire ---------- */
   document.addEventListener("DOMContentLoaded", function(){
-    $("t-start").addEventListener("click", start);
-    $("t-next").addEventListener("click", commit);
-    $("t-skip").addEventListener("click", skip);
+    $("t-start").addEventListener("click", CFG.form ? startForm : start);
+    var nextBtn=$("t-next"); if(nextBtn) nextBtn.addEventListener("click", commit);
+    var skipBtn=$("t-skip"); if(skipBtn) skipBtn.addEventListener("click", skip);
+    var finishBtn=$("t-finish"); if(finishBtn) finishBtn.addEventListener("click", finishForm);
     $("t-quit").addEventListener("click", function(){ clearInterval(S.tick); panel("t-intro"); });
     $("t-restart").addEventListener("click", function(){ panel("t-intro"); });
     var dlBtn=$("t-download"); if(dlBtn) dlBtn.addEventListener("click", downloadReport);
