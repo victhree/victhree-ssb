@@ -25,8 +25,8 @@
   function $(id){ return document.getElementById(id); }
   function el(t,c,x){ var e=document.createElement(t); if(c)e.className=c; if(x!=null)e.textContent=x; return e; }
   function panel(id){ ["t-intro","t-run","t-results"].forEach(function(p){ $(p).classList.toggle("active", p===id); }); window.scrollTo(0,0); }
-  function promptOf(it){ return it.word!=null ? it.word : (it.situation!=null ? it.situation : (it.prompt!=null ? it.prompt : (it.label!=null ? it.label : ""))); }
-  function suggLabel(){ return CFG.mode==="SDT" ? "Suggested refinement: " : ((CFG.mode==="TAT"||CFG.mode==="PPDT") ? "A stronger version: " : "Better alternative: "); }
+  function promptOf(it){ return it.word!=null ? it.word : (it.situation!=null ? it.situation : (it.scenario!=null ? it.scenario : (it.prompt!=null ? it.prompt : (it.label!=null ? it.label : "")))); }
+  function suggLabel(){ return CFG.mode==="SDT" ? "Suggested refinement: " : (CFG.mode==="GPE" ? "A stronger plan: " : ((CFG.mode==="TAT"||CFG.mode==="PPDT") ? "A stronger version: " : "Better alternative: ")); }
   function tagOf(it){ return it.tag || it.type || ""; }
   function shuffle(a){ a=a.slice(); for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i];a[i]=a[j];a[j]=t;} return a; }
 
@@ -45,18 +45,26 @@
 
   function render(){
     var it = S.items[S.idx];
-    $("t-kind").textContent = CFG.mode==="WAT" ? "Word" : "Situation";
     var pt = $("t-prompt");
-    pt.className = CFG.mode==="WAT" ? "t-word" : "t-sit";
-    pt.textContent = promptOf(it);
-    $("t-counter").textContent = (S.idx+1)+" / "+S.items.length;
+    if(CFG.mode==="GPE"){
+      $("t-kind").textContent = it.title || "Scenario";
+      pt.className = "gpe-scenario";
+      pt.textContent = promptOf(it);
+      $("t-counter").textContent = "Scenario "+(S.idx+1)+" / "+S.items.length;
+      var nb=$("t-next"); if(nb) nb.textContent = (S.idx>=S.items.length-1) ? "Finish" : "Next →";
+    } else {
+      $("t-kind").textContent = CFG.mode==="WAT" ? "Word" : "Situation";
+      pt.className = CFG.mode==="WAT" ? "t-word" : "t-sit";
+      pt.textContent = promptOf(it);
+      $("t-counter").textContent = (S.idx+1)+" / "+S.items.length;
+    }
     $("t-progress").firstElementChild.style.width = (S.idx/S.items.length*100)+"%";
-    var inp = $("t-input"); inp.value=""; inp.focus();
+    var inp = $("t-input"); inp.value=""; if(CFG.mode!=="GPE") inp.focus();
     S.remaining = CFG.seconds; S.startTs = performance.now();
     drawTimer();
     clearInterval(S.tick); S.tick = setInterval(onTick, 1000);
   }
-  function drawTimer(){ var t=$("t-timer"); t.textContent=S.remaining; t.classList.toggle("low", S.remaining<=5); }
+  function drawTimer(){ var t=$("t-timer"); var big=CFG.seconds>=60; t.textContent = big ? fmtClock(Math.max(0,S.remaining)) : S.remaining; t.classList.toggle("low", S.remaining <= (big?30:5)); }
   function onTick(){ S.remaining--; drawTimer(); if(S.remaining<=0){ clearInterval(S.tick); commit(); } }
 
   function commit(){
@@ -283,7 +291,7 @@
     var status=$("ai-status");
     status.innerHTML='<span class="spinner"></span>Analysing your responses… this may take a few moments.';
     $("ai-body").innerHTML="";
-    var items=S.responses.map(function(r,i){ return { n:i+1, prompt:promptOf(r.item), tag:tagOf(r.item), response:r.text, seconds:r.seconds }; });
+    var items=S.responses.map(function(r,i){ return { n:i+1, prompt:promptOf(r.item), title:(r.item&&r.item.title)||undefined, tag:tagOf(r.item), response:r.text, seconds:r.seconds }; });
     var send=function(){
       fetch(AI, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ mode:CFG.mode, items:items }) })
         .then(function(res){ if(!res.ok) throw new Error("HTTP "+res.status); return res.json(); })
@@ -313,7 +321,7 @@
         var d=el("div","ai-item");
         d.appendChild(el("div","qn","#"+(it.n||"")+"  "+(it.prompt||"")));
         var resp=(S.responses[(it.n||0)-1]||{}).text;
-        var yr=el("p","ai-your"); yr.appendChild(el("strong",null,CFG.mode==="TAT"?"Your story: ":(CFG.mode==="PPDT"?"Your perception & story: ":"Your response: "))); yr.appendChild(document.createTextNode(resp||"(left blank)")); d.appendChild(yr);
+        var yr=el("p","ai-your"); yr.appendChild(el("strong",null,CFG.mode==="TAT"?"Your story: ":(CFG.mode==="PPDT"?"Your perception & story: ":(CFG.mode==="GPE"?"Your plan: ":"Your response: ")))); yr.appendChild(document.createTextNode(resp||"(left blank)")); d.appendChild(yr);
         if(it.comment) d.appendChild(el("p",null,it.comment));
         if(it.suggestion){ var s=el("p"); s.appendChild(el("strong",null,suggLabel())); var span=el("span","sugg",it.suggestion); s.appendChild(span); d.appendChild(s); }
         body.appendChild(d);
@@ -370,7 +378,7 @@
     var JS = window.jspdf && window.jspdf.jsPDF;
     if(!JS){ alert("The PDF tool didn't finish loading. Please reconnect and tap Download PDF again."); return; }
     var R=S.responses, A=S.analysis, mode=CFG.mode;
-    var testName = mode==="SRT" ? "Situation Reaction Test (SRT)" : (mode==="SDT" ? "Self-Description Test (SDT)" : (mode==="TAT" ? "Thematic Apperception Test (TAT)" : (mode==="PPDT" ? "Picture Perception & Description Test (PPDT)" : "Word Association Test (WAT)")));
+    var testName = mode==="SRT" ? "Situation Reaction Test (SRT)" : (mode==="SDT" ? "Self-Description Test (SDT)" : (mode==="TAT" ? "Thematic Apperception Test (TAT)" : (mode==="PPDT" ? "Picture Perception & Description Test (PPDT)" : (mode==="GPE" ? "Group Planning Exercise (GPE)" : "Word Association Test (WAT)"))));
     var storyMode = (mode==="TAT"||mode==="PPDT");
     var when = new Date().toLocaleString();
     var attempted = R.filter(function(r){return r.text.length>0;}).length;
@@ -423,7 +431,7 @@
     // Title, meta, stat
     text("Performance Report", {font:"times", style:"bold", size:22, color:navy, lh:26});
     text(testName+"   ·   "+when, {font:"helvetica", style:"normal", size:9.5, color:soft, lh:14, gap:4});
-    text((mode==="SDT"?"Answered ":(storyMode?"Wrote ":"Attempted "))+attempted+" of "+R.length+(storyMode?" stories.":"."), {font:"times", style:"normal", size:11.5, color:ink, gap:10});
+    text((mode==="SDT"?"Answered ":(storyMode?"Wrote ":(mode==="GPE"?"Planned ":"Attempted ")))+attempted+" of "+R.length+(storyMode?" stories.":(mode==="GPE"?" scenarios.":".")), {font:"times", style:"normal", size:11.5, color:ink, gap:10});
 
     // Analysis cards
     if(A){
@@ -436,13 +444,13 @@
 
     // Response-by-response
     y+=4;
-    text(mode==="SDT"?"Prompt-by-prompt":(storyMode?"Story-by-story":"Response-by-response"), {font:"times", style:"bold", size:15, color:navy, lh:20, gap:2});
+    text(mode==="SDT"?"Prompt-by-prompt":(storyMode?"Story-by-story":(mode==="GPE"?"Scenario-by-scenario":"Response-by-response")), {font:"times", style:"bold", size:15, color:navy, lh:20, gap:2});
     R.forEach(function(r,i){
       var it=(A&&A.items)?A.items.filter(function(z){return z.n===(i+1);})[0]:null;
       br(30);
       y+=5; doc.setDrawColor(228,225,214); doc.setLineWidth(0.6); doc.line(x,y,x+cw,y); y+=9;
       text("#"+(i+1)+"   "+promptOf(r.item), {font:"helvetica", style:"bold", size:10.5, color:navy, lh:14});
-      text((mode==="TAT"?"Your story: ":(mode==="PPDT"?"Your perception & story: ":"Your response: "))+(r.text||"(left blank)"), {font:"times", style:"normal", size:11, color:soft});
+      text((mode==="TAT"?"Your story: ":(mode==="PPDT"?"Your perception & story: ":(mode==="GPE"?"Your plan: ":"Your response: ")))+(r.text||"(left blank)"), {font:"times", style:"normal", size:11, color:soft});
       if(it&&it.comment) text(it.comment, {font:"times", style:"normal", size:11, color:ink});
       if(it&&it.suggestion) text(suggLabel()+it.suggestion, {font:"times", style:"italic", size:11, color:green});
       y+=3;
@@ -466,8 +474,8 @@
     $("t-restart").addEventListener("click", function(){ panel("t-intro"); });
     var dlBtn=$("t-download"); if(dlBtn) dlBtn.addEventListener("click", downloadReport);
     var copyBtn=$("t-copy"); if(copyBtn) copyBtn.addEventListener("click", copyText);
-    // Enter-to-advance only in single-line item modes (WAT/SRT); stories and self-description need newlines.
-    if(!CFG.form && !CFG.image){ var ti=$("t-input"); if(ti) ti.addEventListener("keydown", function(e){ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); commit(); } }); }
+    // Enter-to-advance only in single-line item modes (WAT/SRT); stories, self-description and plans need newlines.
+    if(!CFG.form && !CFG.image && CFG.mode!=="GPE"){ var ti=$("t-input"); if(ti) ti.addEventListener("keydown", function(e){ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); commit(); } }); }
     if(hasSaved()){ var link=$("t-resume"); link.style.display="inline-block"; link.addEventListener("click", function(e){ e.preventDefault(); loadSaved(); }); }
     if(!AI){ var hint=$("ai-off-hint"); if(hint) hint.style.display="block"; }
     // Keep the timer/progress header aligned to the top of the visible area

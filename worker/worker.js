@@ -55,7 +55,7 @@ export default {
     } catch (e) {
       return json({ error: "Invalid JSON" }, 400, cors);
     }
-    const mode = payload && (payload.mode === "SRT" || payload.mode === "SDT" || payload.mode === "TAT" || payload.mode === "PPDT") ? payload.mode : "WAT";
+    const mode = payload && (payload.mode === "SRT" || payload.mode === "SDT" || payload.mode === "TAT" || payload.mode === "PPDT" || payload.mode === "GPE") ? payload.mode : "WAT";
     const items = Array.isArray(payload && payload.items) ? payload.items.slice(0, 80) : [];
     if (!items.length) return json({ error: "No items" }, 400, cors);
 
@@ -124,6 +124,7 @@ function buildPrompt(mode, items) {
   if (mode === "SDT") return buildSdtPrompt(items);
   if (mode === "TAT") return buildTatPrompt(items);
   if (mode === "PPDT") return buildPpdtPrompt(items);
+  if (mode === "GPE") return buildGpePrompt(items);
   const testName =
     mode === "SRT" ? "Situation Reaction Test (SRT)" : "Word Association Test (WAT)";
   const lines = items.map((it) => {
@@ -243,6 +244,41 @@ function ppdtCriteria() {
 function buildPpdtPrompt(items) {
   const lines = items.map((it) => `#${it.n} — ${it.prompt}\n   ${it.response || "[left blank]"}`);
   return ppdtCriteria() + "\n\n=== Candidate's PPDT responses ===\n" + lines.join("\n");
+}
+
+function buildGpePrompt(items) {
+  const parts = items.map((it) => {
+    const label = it.title ? it.title : ("Scenario " + it.n);
+    return `#${it.n} — ${label}\n   Scenario: ${it.prompt}\n   Candidate's plan: ${it.response || "[left blank]"}`;
+  });
+  return [
+    `You are an experienced, fair SSB (Services Selection Board) Group Testing Officer (GTO) assessing a candidate's individual written plan for a Group Planning Exercise (GPE, also called the Military Planning Exercise).`,
+    `In the GPE the candidate is given a scenario with several simultaneous problems and limited resources, and about ten minutes to write their own plan before the group discussion. For each item you are given the full scenario and the candidate's plan.`,
+    `IMPORTANT: there is no single correct plan. Judge the plan on sound judgement, not on matching one ideal answer. A different but well-justified priority order is fully acceptable.`,
+    ``,
+    `Judge each plan on:`,
+    `- Completeness: did the plan address EVERY problem in the scenario? Missing a problem is a major fault.`,
+    `- Prioritisation: is the order sensible (human life in immediate danger first, then a threat to many lives or security, then a single life with some time, then property, then the trivial), and is it justified?`,
+    `- Delegation: is the group split into named parties acting in parallel, rather than one hero doing everything?`,
+    `- Realism and time: are actions time-bound and physically possible using the stated distances, speeds and deadlines, using ONLY the resources given (no invented phone, vehicle, helicopter or help)?`,
+    `- Use of authorities: are the police, hospital, telephone or other given help used where appropriate?`,
+    `- Structure and clarity: problems listed, prioritised, party-wise time-bound tasks, and a regroup point.`,
+    `Watch for red flags: missing a problem, property before life, no delegation (a solo hero), ignoring time and distance, inventing resources, unrealistic or filmi solutions, illogical group-splitting, contradicting the scenario's facts.`,
+    ``,
+    `The relevant Officer-Like Qualities (OLQs) include: effective intelligence, reasoning ability, organising ability, power of expression, initiative, self-confidence, speed of decision, determination, and cooperation.`,
+    ``,
+    `Return ONLY valid JSON with this exact shape:`,
+    `{`,
+    `  "summary": "a 3-5 sentence assessment in the voice of a GTO: how well the candidate grasped the situation, prioritised human life, delegated and used resources, kept the plan time-bound and realistic, and their overall planning ability",`,
+    `  "olqs_reflected": ["<OLQ name> — brief evidence seen in the plan"],`,
+    `  "olqs_to_work_on": ["<OLQ name> — brief, actionable note"],`,
+    `  "items": [ { "n": <number>, "prompt": "<the scenario title>", "comment": "one-sentence assessment: completeness, prioritisation, delegation, realism and structure", "suggestion": "one concrete way to make this plan stronger and more officer-like, grounded in the scenario" } ]`,
+    `}`,
+    `List 3-6 OLQs reflected and 2-4 to work on, naming actual OLQs. Include an items entry for every scenario. Be honest, concise and constructive.`,
+    ``,
+    `=== Candidate's GPE plans ===`,
+    ...parts
+  ].join("\n");
 }
 
 // Build the Gemini "contents". For TAT/PPDT with pictures attached, interleave each

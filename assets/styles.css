@@ -232,6 +232,12 @@ tbody tr:nth-child(even),tbody tr:nth-child(even){background:var(--paper-2)}
 .pp-field input{width:5.5em}
 .pp-field input:focus,.pp-field select:focus{outline:none;border-color:var(--gold)}
 
+/* GPE (Group Planning Exercise) scenario + plan */
+.gpe-card{background:var(--paper-2);border:1px solid var(--line);border-left:5px solid var(--gold);border-radius:12px;padding:16px 18px;margin-bottom:14px;max-height:44vh;overflow:auto}
+.gpe-title{font-family:var(--sans);font-weight:700;color:var(--navy);font-size:1rem;margin-bottom:8px}
+.gpe-scenario{display:block;font-family:var(--serif);font-size:1.05rem;line-height:1.6;color:var(--ink)}
+#t-input.gpe-plan{min-height:26vh}
+
 /* results */
 .t-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin:18px 0}
 .t-stat{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;text-align:center}
