@@ -55,7 +55,7 @@ export default {
     } catch (e) {
       return json({ error: "Invalid JSON" }, 400, cors);
     }
-    const mode = payload && (payload.mode === "SRT" || payload.mode === "SDT") ? payload.mode : "WAT";
+    const mode = payload && (payload.mode === "SRT" || payload.mode === "SDT" || payload.mode === "TAT") ? payload.mode : "WAT";
     const items = Array.isArray(payload && payload.items) ? payload.items.slice(0, 80) : [];
     if (!items.length) return json({ error: "No items" }, 400, cors);
 
@@ -124,6 +124,7 @@ export default {
 
 function buildPrompt(mode, items) {
   if (mode === "SDT") return buildSdtPrompt(items);
+  if (mode === "TAT") return buildTatPrompt(items);
   const testName =
     mode === "SRT" ? "Situation Reaction Test (SRT)" : "Word Association Test (WAT)";
   const lines = items.map((it) => {
@@ -179,6 +180,37 @@ function buildSdtPrompt(items) {
     `List 3-6 OLQs reflected and 2-4 to work on, naming actual OLQs from the list. Include an items entry for every prompt answered. Be honest, concise and constructive.`,
     ``,
     `=== Candidate's Self-Description responses ===`,
+    ...parts
+  ].join("\n");
+}
+
+function buildTatPrompt(items) {
+  const parts = items.map((it) => {
+    return `#${it.n} — ${it.prompt}\n   Story: ${it.response || "[left blank]"}`;
+  });
+  return [
+    `You are an experienced, fair SSB (Services Selection Board) psychologist assessing a candidate's Thematic Apperception Test (TAT) stories from the Day-2 psychology battery.`,
+    `In the TAT the candidate is shown a hazy picture for 30 seconds, then writes a short story around a central "hero". The hero is a projection of the candidate. IMPORTANT: you are given ONLY the written story text, not the picture, so judge the story itself, never whether it matches a picture.`,
+    ``,
+    `Judge each story on:`,
+    `- A clear central hero who takes initiative and actively solves the problem using realistic, available resources (not luck, not rescue by others, not passivity).`,
+    `- A positive, believable, action-oriented theme and outcome. Reward realism; do not reward superhuman heroics or manufactured positivity.`,
+    `- Complete structure: what led to the situation (past), what is happening now (present), what the hero thinks and feels, and a constructive outcome (result).`,
+    `- Officer-Like Qualities shown through the hero's ACTION, not through adjectives.`,
+    `Watch for red flags: negative, tragic or hopeless endings; a helpless-victim or passive hero; violence, revenge or aggression; unrealistic heroics; no identifiable hero; purely describing the scene with no story; incomplete stories. Do not punish an honest, ordinary story that is positive and realistic.`,
+    ``,
+    `The 15 Officer-Like Qualities (OLQs) are: effective intelligence, reasoning ability, organising ability, power of expression, social adaptability, cooperation, sense of responsibility, initiative, self-confidence, speed of decision, ability to influence the group, liveliness, determination, courage, and stamina.`,
+    ``,
+    `Return ONLY valid JSON with this exact shape:`,
+    `{`,
+    `  "summary": "a 3-5 sentence personality analysis in the voice of an SSB psychologist: the recurring themes across the stories, the kind of hero the candidate projects, emotional tone, realism, and overall officer potential",`,
+    `  "olqs_reflected": ["<OLQ name> — brief evidence seen in the stories"],`,
+    `  "olqs_to_work_on": ["<OLQ name> — brief, actionable note"],`,
+    `  "items": [ { "n": <number>, "prompt": "<the slide label, e.g. Picture 1>", "comment": "one-sentence assessment of this story: hero, initiative, structure, tone and realism", "suggestion": "one concrete way to make this story stronger and more officer-like, building only on what the candidate wrote (do NOT invent picture details)" } ]`,
+    `}`,
+    `List 3-6 OLQs reflected and 2-4 to work on, naming actual OLQs from the list. Include an items entry for every story written. Be honest, concise and constructive.`,
+    ``,
+    `=== Candidate's TAT stories ===`,
     ...parts
   ].join("\n");
 }
