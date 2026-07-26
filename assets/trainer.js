@@ -187,6 +187,13 @@
       if(S.timed){ t.textContent=fmtClock(Math.max(0,S.remaining)); t.classList.toggle("low", S.remaining<=10); }
       else { t.textContent=fmtClock(S.elapsed); t.classList.remove("low"); }
     }
+    // During the look phase, make it explicit that the picture disappears.
+    if(S.phase==="look"){
+      var ph=$("t-phase"), it=S.items[S.idx];
+      if(ph && !(it && it.blank)){
+        ph.textContent = S.timed ? ("Picture hides in "+fmtClock(Math.max(0,S.remaining))) : "Look at the picture, then start writing";
+      }
+    }
     var pb=$("t-progress"); if(pb && pb.firstElementChild && S.timed && S.phaseTotal){ pb.firstElementChild.style.width=Math.min(100,(1-S.remaining/S.phaseTotal)*100)+"%"; }
   }
   function imgTick(){
