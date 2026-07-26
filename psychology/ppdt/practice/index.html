@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content" />
+<title>PPDT Practice, Picture Perception Trainer | VicThree SSB</title>
+<meta name="description" content="Timed PPDT screening practice: view a hazy picture for 30 seconds, note your perception (characters, age, sex, mood), then write a hero story, with an instant performance analysis." />
+<link rel="icon" href="../../../assets/shield-192.png?v=1"><link rel="icon" sizes="32x32" href="../../../assets/shield-32.png?v=1"><link rel="apple-touch-icon" href="../../../assets/shield-180.png?v=1" />
+<link rel="stylesheet" href="../../../assets/styles.css?v=ppdt" />
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="../../../index.html"><img class="brand-img" src="../../../assets/banner.png" alt="VicThree Defence, by Anmol Sharma" /></a>
+  </div>
+</header>
+
+<main>
+  <div class="wrap trainer-wrap">
+    <div class="trainer-head">
+      <div class="th-titles">
+        <p class="eyebrow">Practice</p>
+        <h1>Picture Perception &amp; Description Test</h1>
+      </div>
+      <a class="approach-tile" href="../index.html">How to Approach PPDT&nbsp;›</a>
+      <p class="t-sub">Look at each hazy picture for about 30 seconds. Then the picture goes away and you note your perception, the number of characters and the main character's age, sex and mood, and write a short hero story with a positive outcome. This is the Day-1 screening test.</p>
+    </div>
+
+    <!-- INTRO -->
+    <section id="t-intro" class="t-panel active">
+      <div class="t-controls">
+        <label class="t-count-label" for="t-count">Choose your session</label>
+        <div class="t-count-row">
+          <select id="t-count">
+            <option value="1">1 picture</option>
+            <option value="5" selected>5 pictures</option>
+            <option value="10">10 pictures</option>
+            <option value="0">All 100</option>
+          </select>
+          <select id="t-mode">
+            <option value="timed" selected>Timed</option>
+            <option value="untimed">Untimed</option>
+          </select>
+          <button id="t-start" class="btn primary">Start</button>
+        </div>
+        <a href="#" id="t-resume" class="link-btn" style="display:none">View your last session's review →</a>
+      </div>
+    </section>
+
+    <!-- RUN -->
+    <section id="t-run" class="t-panel">
+      <div class="t-head">
+        <span id="t-counter" class="t-count">Story 1 / 5</span>
+        <div id="t-progress" class="t-bar"><div></div></div>
+        <span id="t-timer" class="t-timer">0:30</span>
+      </div>
+      <p id="t-phase" class="tat-phase">Look at the picture</p>
+      <div id="t-pic" class="tat-pic">
+        <img id="t-pic-img" alt="PPDT picture" />
+        <div id="t-pic-blank" class="tat-blank" style="display:none"></div>
+      </div>
+      <div id="t-perception" class="pp-grid" style="display:none">
+        <div class="pp-field"><label for="pp-chars">Characters</label><input id="pp-chars" type="number" min="0" inputmode="numeric" /></div>
+        <div class="pp-field"><label for="pp-age">Main age</label><input id="pp-age" type="number" min="0" inputmode="numeric" /></div>
+        <div class="pp-field"><label for="pp-sex">Sex</label><select id="pp-sex"><option value="">–</option><option>M</option><option>F</option><option>P</option></select></div>
+        <div class="pp-field"><label for="pp-mood">Mood</label><select id="pp-mood"><option value="">–</option><option value="Positive">Positive</option><option value="Negative">Negative</option><option value="Neutral">Neutral</option></select></div>
+      </div>
+      <textarea id="t-input" class="tat-story" rows="6" placeholder="Write your story: what led to the scene, what the hero does, and a positive outcome…" autocomplete="off" style="display:none"></textarea>
+      <div class="t-actions">
+        <button id="t-advance" class="btn primary">Start writing →</button>
+      </div>
+      <p class="t-hint">One clear hero who takes initiative and solves the problem. Keep it positive, realistic, about 80 to 100 words.</p>
+      <p style="margin-top:10px"><button id="t-quit" class="link-btn">Quit</button></p>
+    </section>
+
+    <!-- RESULTS -->
+    <section id="t-results" class="t-panel">
+      <h2>Your session review</h2>
+      <div id="t-stats" class="t-stats"></div>
+
+      <div id="t-ai" class="ai-box" style="display:none">
+        <div class="ai-head">
+          <h3>Your Performance Analysis</h3>
+          <button id="t-download" class="btn primary ai-dl">↓ Download PDF</button>
+        </div>
+        <p class="ai-tagline">There are no right answers in the PPDT, this is guidance to help your perception and story read more clearly, not a verdict.</p>
+        <p id="ai-status" class="ai-status"></p>
+        <div id="ai-body"></div>
+      </div>
+
+      <div class="t-checklist">
+        <h3>Self-audit checklist</h3>
+        <div id="t-checklist-items"></div>
+      </div>
+
+      <div class="t-toolbar">
+        <button id="t-restart" class="btn ghost">New session</button>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<footer class="site-foot">
+  <p class="join-label">Join the Journey</p>
+  <nav class="foot-social">
+    <a href="https://youtube.com/@victhreedefence" target="_blank" rel="noopener" title="YouTube" aria-label="YouTube"><svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M23 7.5a3 3 0 0 0-2.1-2.1C19 4.9 12 4.9 12 4.9s-7 0-8.9.5A3 3 0 0 0 1 7.5 31 31 0 0 0 .5 12 31 31 0 0 0 1 16.5a3 3 0 0 0 2.1 2.1c1.9.5 8.9.5 8.9.5s7 0 8.9-.5A3 3 0 0 0 23 16.5 31 31 0 0 0 23.5 12 31 31 0 0 0 23 7.5zM9.8 15.3V8.7l5.7 3.3-5.7 3.3z"/></svg></a>
+    <a href="https://www.instagram.com/victhreedefence" target="_blank" rel="noopener" title="Instagram" aria-label="Instagram"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1.3" fill="currentColor" stroke="none"/></svg></a>
+    <a href="https://t.me/anmolxsharma" target="_blank" rel="noopener" title="Telegram" aria-label="Telegram"><svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M9.8 16.2l-.35 3.9c.5 0 .72-.22.98-.48l2.36-2.26 4.9 3.58c.9.5 1.54.24 1.78-.83l3.23-15.13c.32-1.34-.48-1.86-1.35-1.54L1.15 9.3C-.16 9.82-.14 10.56.93 10.9l5.02 1.56L17.9 5.1c.55-.36 1.05-.16.64.2L9.8 16.2z"/></svg></a>
+  </nav>
+  <p class="foot-note">VicThree Defence &middot; SSB Interview Preparation &middot; PPDT, WAT, SRT, SDT &amp; TAT</p>
+</footer>
+
+<script src="../../../assets/vendor/jspdf.umd.min.js"></script>
+<script src="../../../assets/config.js"></script>
+<script src="../../../data/ppdt-pictures.js"></script>
+<script>
+  window.TRAINER = {
+    mode: "PPDT",
+    image: true,
+    perception: true,
+    viewSeconds: 30,
+    writeSeconds: 270,
+    blankSlide: false,
+    images: window.PPDT_PICTURES,
+    checklist: [
+      "Did I note the number of characters and the hero's age, sex and mood?",
+      "Is there one clear, positive hero driving the action, not a group or a bystander?",
+      "Do the characters in my story match what I noted in perception?",
+      "Did I use cause, action and a positive realistic outcome in about 80 to 100 words?",
+      "Did I avoid negative, violent or superhuman themes?"
+    ]
+  };
+</script>
+<script src="../../../assets/trainer.js?v=ppdt"></script>
+</body>
+</html>

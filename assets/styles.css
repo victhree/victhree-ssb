@@ -224,6 +224,14 @@ tbody tr:nth-child(even),tbody tr:nth-child(even){background:var(--paper-2)}
 .tat-blank{min-height:42vh;display:flex;align-items:center;justify-content:center;text-align:center;background:#fff;border:2px dashed var(--line-2);border-radius:12px;padding:30px;font-family:var(--serif);font-size:1.3rem;color:var(--ink-soft)}
 #t-input.tat-story{min-height:34vh}
 
+/* PPDT perception grid (before the story) */
+.pp-grid{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-end;margin-bottom:14px;background:var(--paper-2);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.pp-field{display:flex;flex-direction:column;gap:4px}
+.pp-field label{font-family:var(--sans);font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft)}
+.pp-field input,.pp-field select{font-family:var(--sans);font-size:1rem;padding:9px 10px;border:1px solid var(--line-2);border-radius:8px;background:#fff;color:var(--ink)}
+.pp-field input{width:5.5em}
+.pp-field input:focus,.pp-field select:focus{outline:none;border-color:var(--gold)}
+
 /* results */
 .t-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin:18px 0}
 .t-stat{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;text-align:center}

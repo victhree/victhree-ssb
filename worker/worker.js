@@ -55,7 +55,7 @@ export default {
     } catch (e) {
       return json({ error: "Invalid JSON" }, 400, cors);
     }
-    const mode = payload && (payload.mode === "SRT" || payload.mode === "SDT" || payload.mode === "TAT") ? payload.mode : "WAT";
+    const mode = payload && (payload.mode === "SRT" || payload.mode === "SDT" || payload.mode === "TAT" || payload.mode === "PPDT") ? payload.mode : "WAT";
     const items = Array.isArray(payload && payload.items) ? payload.items.slice(0, 80) : [];
     if (!items.length) return json({ error: "No items" }, 400, cors);
 
@@ -125,6 +125,7 @@ export default {
 function buildPrompt(mode, items) {
   if (mode === "SDT") return buildSdtPrompt(items);
   if (mode === "TAT") return buildTatPrompt(items);
+  if (mode === "PPDT") return buildPpdtPrompt(items);
   const testName =
     mode === "SRT" ? "Situation Reaction Test (SRT)" : "Word Association Test (WAT)";
   const lines = items.map((it) => {
@@ -211,6 +212,38 @@ function buildTatPrompt(items) {
     `List 3-6 OLQs reflected and 2-4 to work on, naming actual OLQs from the list. Include an items entry for every story written. Be honest, concise and constructive.`,
     ``,
     `=== Candidate's TAT stories ===`,
+    ...parts
+  ].join("\n");
+}
+
+function buildPpdtPrompt(items) {
+  const parts = items.map((it) => {
+    return `#${it.n} — ${it.prompt}\n   ${it.response || "[left blank]"}`;
+  });
+  return [
+    `You are an experienced, fair SSB (Services Selection Board) assessor evaluating a candidate's Picture Perception and Description Test (PPDT), the Day-1 screening test.`,
+    `In PPDT the candidate sees a single hazy picture for 30 seconds, notes their perception (number of characters, and the main character's age, sex and mood), then writes a short story around a hero. Each response below is given as a "Perception" line followed by the "Story".`,
+    `IMPORTANT: you are given ONLY the candidate's typed perception and story, NOT the picture. So judge the text's internal coherence, positivity and structure, never whether it matches an actual picture.`,
+    ``,
+    `Judge each response on:`,
+    `- Perception quality: a clear character count and the main character's age/sex/mood, leaning positive, coherent with the story that follows.`,
+    `- One clear, positive, proactive hero who corresponds to the main perceived character (not a group, not a passive victim, not a bystander).`,
+    `- A complete cause -> action -> positive, realistic outcome structure, ideally around 80-100 words, with the hero taking initiative and using believable resources.`,
+    `- Officer-Like Qualities shown through the hero's ACTION, not adjectives.`,
+    `Watch for red flags: negative, violent or tragic themes; a perception-story mismatch (characters or hero that do not match the noted count/details); no single hero or a group story; a passive or rescued hero; unrealistic or superhuman heroics; merely describing the scene; an incomplete story. Do not punish an honest, ordinary story that is positive and realistic.`,
+    ``,
+    `The 15 Officer-Like Qualities (OLQs) are: effective intelligence, reasoning ability, organising ability, power of expression, social adaptability, cooperation, sense of responsibility, initiative, self-confidence, speed of decision, ability to influence the group, liveliness, determination, courage, and stamina.`,
+    ``,
+    `Return ONLY valid JSON with this exact shape:`,
+    `{`,
+    `  "summary": "a 3-5 sentence assessment in the voice of an SSB screening assessor: the candidate's perception positivity, the kind of hero they project, story structure and realism, and whether this reads as screen-in material",`,
+    `  "olqs_reflected": ["<OLQ name> — brief evidence seen in the responses"],`,
+    `  "olqs_to_work_on": ["<OLQ name> — brief, actionable note"],`,
+    `  "items": [ { "n": <number>, "prompt": "<the slide label, e.g. Picture 1>", "comment": "one-sentence assessment: perception coherence, hero, structure, tone and realism", "suggestion": "one concrete way to make this response stronger and more officer-like, building only on what the candidate wrote (do NOT invent picture details)" } ]`,
+    `}`,
+    `List 3-6 OLQs reflected and 2-4 to work on, naming actual OLQs from the list. Include an items entry for every response. Be honest, concise and constructive.`,
+    ``,
+    `=== Candidate's PPDT responses ===`,
     ...parts
   ].join("\n");
 }

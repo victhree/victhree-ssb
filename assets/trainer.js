@@ -26,7 +26,7 @@
   function el(t,c,x){ var e=document.createElement(t); if(c)e.className=c; if(x!=null)e.textContent=x; return e; }
   function panel(id){ ["t-intro","t-run","t-results"].forEach(function(p){ $(p).classList.toggle("active", p===id); }); window.scrollTo(0,0); }
   function promptOf(it){ return it.word!=null ? it.word : (it.situation!=null ? it.situation : (it.prompt!=null ? it.prompt : (it.label!=null ? it.label : ""))); }
-  function suggLabel(){ return CFG.mode==="SDT" ? "Suggested refinement: " : (CFG.mode==="TAT" ? "A stronger version: " : "Better alternative: "); }
+  function suggLabel(){ return CFG.mode==="SDT" ? "Suggested refinement: " : ((CFG.mode==="TAT"||CFG.mode==="PPDT") ? "A stronger version: " : "Better alternative: "); }
   function tagOf(it){ return it.tag || it.type || ""; }
   function shuffle(a){ a=a.slice(); for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i];a[i]=a[j];a[j]=t;} return a; }
 
@@ -140,6 +140,7 @@
     if(it.blank){ img.style.display="none"; img.removeAttribute("src"); blank.style.display=""; }
     else { blank.style.display="none"; img.style.display=""; img.src=it.image; }
     $("t-input").style.display="none";
+    var perL=$("t-perception"); if(perL) perL.style.display="none";
     $("t-phase").textContent = it.blank ? "Imagine your own picture" : "Look at the picture";
     $("t-advance").textContent = "Start writing →";
     tatCounter();
@@ -148,10 +149,31 @@
   function renderWrite(){
     S.phase="write";
     $("t-pic").style.display="none";            // picture disappears, as in the real test
-    var inp=$("t-input"); inp.style.display=""; inp.value=""; inp.focus();
-    $("t-phase").textContent = "Write your story";
+    var inp=$("t-input"); inp.style.display=""; inp.value="";
     $("t-advance").textContent = (S.idx>=S.items.length-1) ? "Finish" : "Next →";
+    if(CFG.perception){
+      var per=$("t-perception");
+      if(per){
+        per.style.display="";
+        ["pp-chars","pp-age"].forEach(function(id){ var e=$(id); if(e) e.value=""; });
+        var sx=$("pp-sex"); if(sx) sx.selectedIndex=0;
+        var md=$("pp-mood"); if(md) md.selectedIndex=0;
+      }
+      $("t-phase").textContent = "Note your perception, then write the story";
+      var first=$("pp-chars"); if(first) first.focus(); else inp.focus();
+    } else {
+      $("t-phase").textContent = "Write your story";
+      inp.focus();
+    }
     startPhaseTimer(CFG.writeSeconds||240);
+  }
+  function ppComposeText(){
+    var v=function(id){ var e=$(id); return e?String(e.value).trim():""; };
+    var chars=v("pp-chars"), age=v("pp-age"), sex=v("pp-sex"), mood=v("pp-mood");
+    var story=$("t-input").value.trim();
+    if(!story && !chars && !age) return "";
+    var per="Perception — characters: "+(chars||"?")+"; main character: age "+(age||"?")+", "+(sex||"?")+", "+(mood||"?")+" mood.";
+    return per + "\nStory: " + (story || "[left blank]");
   }
   function startPhaseTimer(total){
     S.phaseTotal=total; S.remaining=total;
@@ -175,7 +197,7 @@
   function advancePhase(){
     clearInterval(S.tick);
     if(S.phase==="look"){ renderWrite(); return; }
-    S.responses.push({ item:S.items[S.idx], text:$("t-input").value.trim(), seconds:0 });
+    S.responses.push({ item:S.items[S.idx], text:(CFG.perception?ppComposeText():$("t-input").value.trim()), seconds:0 });
     S.idx++;
     if(S.idx>=S.items.length){ S.formUsed=S.elapsed; finish(); }
     else renderLook();
@@ -258,7 +280,7 @@
         var d=el("div","ai-item");
         d.appendChild(el("div","qn","#"+(it.n||"")+"  "+(it.prompt||"")));
         var resp=(S.responses[(it.n||0)-1]||{}).text;
-        var yr=el("p","ai-your"); yr.appendChild(el("strong",null,CFG.mode==="TAT"?"Your story: ":"Your response: ")); yr.appendChild(document.createTextNode(resp||"(left blank)")); d.appendChild(yr);
+        var yr=el("p","ai-your"); yr.appendChild(el("strong",null,CFG.mode==="TAT"?"Your story: ":(CFG.mode==="PPDT"?"Your perception & story: ":"Your response: "))); yr.appendChild(document.createTextNode(resp||"(left blank)")); d.appendChild(yr);
         if(it.comment) d.appendChild(el("p",null,it.comment));
         if(it.suggestion){ var s=el("p"); s.appendChild(el("strong",null,suggLabel())); var span=el("span","sugg",it.suggestion); s.appendChild(span); d.appendChild(s); }
         body.appendChild(d);
@@ -315,7 +337,8 @@
     var JS = window.jspdf && window.jspdf.jsPDF;
     if(!JS){ alert("The PDF tool didn't finish loading. Please reconnect and tap Download PDF again."); return; }
     var R=S.responses, A=S.analysis, mode=CFG.mode;
-    var testName = mode==="SRT" ? "Situation Reaction Test (SRT)" : (mode==="SDT" ? "Self-Description Test (SDT)" : (mode==="TAT" ? "Thematic Apperception Test (TAT)" : "Word Association Test (WAT)"));
+    var testName = mode==="SRT" ? "Situation Reaction Test (SRT)" : (mode==="SDT" ? "Self-Description Test (SDT)" : (mode==="TAT" ? "Thematic Apperception Test (TAT)" : (mode==="PPDT" ? "Picture Perception & Description Test (PPDT)" : "Word Association Test (WAT)")));
+    var storyMode = (mode==="TAT"||mode==="PPDT");
     var when = new Date().toLocaleString();
     var attempted = R.filter(function(r){return r.text.length>0;}).length;
 
@@ -367,7 +390,7 @@
     // Title, meta, stat
     text("Performance Report", {font:"times", style:"bold", size:22, color:navy, lh:26});
     text(testName+"   ·   "+when, {font:"helvetica", style:"normal", size:9.5, color:soft, lh:14, gap:4});
-    text((mode==="SDT"?"Answered ":(mode==="TAT"?"Wrote ":"Attempted "))+attempted+" of "+R.length+(mode==="TAT"?" stories.":"."), {font:"times", style:"normal", size:11.5, color:ink, gap:10});
+    text((mode==="SDT"?"Answered ":(storyMode?"Wrote ":"Attempted "))+attempted+" of "+R.length+(storyMode?" stories.":"."), {font:"times", style:"normal", size:11.5, color:ink, gap:10});
 
     // Analysis cards
     if(A){
@@ -380,13 +403,13 @@
 
     // Response-by-response
     y+=4;
-    text(mode==="SDT"?"Prompt-by-prompt":(mode==="TAT"?"Story-by-story":"Response-by-response"), {font:"times", style:"bold", size:15, color:navy, lh:20, gap:2});
+    text(mode==="SDT"?"Prompt-by-prompt":(storyMode?"Story-by-story":"Response-by-response"), {font:"times", style:"bold", size:15, color:navy, lh:20, gap:2});
     R.forEach(function(r,i){
       var it=(A&&A.items)?A.items.filter(function(z){return z.n===(i+1);})[0]:null;
       br(30);
       y+=5; doc.setDrawColor(228,225,214); doc.setLineWidth(0.6); doc.line(x,y,x+cw,y); y+=9;
       text("#"+(i+1)+"   "+promptOf(r.item), {font:"helvetica", style:"bold", size:10.5, color:navy, lh:14});
-      text((mode==="TAT"?"Your story: ":"Your response: ")+(r.text||"(left blank)"), {font:"times", style:"normal", size:11, color:soft});
+      text((mode==="TAT"?"Your story: ":(mode==="PPDT"?"Your perception & story: ":"Your response: "))+(r.text||"(left blank)"), {font:"times", style:"normal", size:11, color:soft});
       if(it&&it.comment) text(it.comment, {font:"times", style:"normal", size:11, color:ink});
       if(it&&it.suggestion) text(suggLabel()+it.suggestion, {font:"times", style:"italic", size:11, color:green});
       y+=3;
