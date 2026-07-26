@@ -21,6 +21,20 @@
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--serif);line-height:1.65;font-size:18px}
+/* Muted grey camouflage mottle, home page only. Soft overlapping grey patches over the paper. */
+body.home{
+  background-color:var(--paper);
+  background-image:
+    radial-gradient(38% 30% at 18% 20%, rgba(108,116,128,.10) 0%, rgba(108,116,128,0) 70%),
+    radial-gradient(30% 40% at 63% 10%, rgba(126,132,140,.08) 0%, rgba(126,132,140,0) 70%),
+    radial-gradient(34% 26% at 90% 34%, rgba(108,116,128,.09) 0%, rgba(108,116,128,0) 70%),
+    radial-gradient(30% 36% at 38% 48%, rgba(126,132,140,.07) 0%, rgba(126,132,140,0) 70%),
+    radial-gradient(40% 30% at 80% 70%, rgba(108,116,128,.09) 0%, rgba(108,116,128,0) 70%),
+    radial-gradient(30% 36% at 12% 78%, rgba(126,132,140,.08) 0%, rgba(126,132,140,0) 70%),
+    radial-gradient(26% 30% at 55% 88%, rgba(108,116,128,.07) 0%, rgba(108,116,128,0) 70%);
+  background-size:560px 560px;
+  background-repeat:repeat;
+}
 .wrap{max-width:var(--maxw);margin:0 auto;padding:0 22px}
 img{max-width:100%}
 
