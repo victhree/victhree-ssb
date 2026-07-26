@@ -218,7 +218,7 @@ tbody tr:nth-child(even),tbody tr:nth-child(even){background:var(--paper-2)}
 .sdt-a:focus{outline:none;border-color:var(--gold)}
 
 /* TAT image mode (look at a picture, then write a story) */
-.tat-phase{font-family:var(--sans);font-weight:700;text-transform:uppercase;letter-spacing:.09em;font-size:.78rem;color:var(--gold);margin:0 0 10px}
+.tat-phase{font-family:var(--sans);font-weight:700;text-transform:uppercase;letter-spacing:.09em;font-size:.82rem;color:var(--gold);margin:0 0 10px;text-align:center}
 .tat-pic{text-align:center;margin-bottom:14px}
 .tat-pic img{max-width:100%;max-height:56vh;border-radius:10px;border:1px solid var(--line);background:#fff}
 .tat-blank{min-height:42vh;display:flex;align-items:center;justify-content:center;text-align:center;background:#fff;border:2px dashed var(--line-2);border-radius:12px;padding:30px;font-family:var(--serif);font-size:1.3rem;color:var(--ink-soft)}
