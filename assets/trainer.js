@@ -20,7 +20,7 @@
   var VIOLENT = ["kill","killed","murder","stab","shoot","destroy","revenge","beat him","beat them","hit him","hit them",
     "slap","punch","bomb","curse"];
 
-  var S = { items: [], idx: 0, responses: [], remaining: 0, startTs: 0, tick: null, analysis: null, formTotal: 0, formUsed: 0 };
+  var S = { items: [], idx: 0, responses: [], remaining: 0, startTs: 0, tick: null, analysis: null, formTotal: 0, formUsed: 0, untimed: false, elapsed: 0 };
 
   function $(id){ return document.getElementById(id); }
   function el(t,c,x){ var e=document.createElement(t); if(c)e.className=c; if(x!=null)e.textContent=x; return e; }
@@ -73,7 +73,9 @@
   function startForm(){
     var sel=$("t-count");
     var mins = sel ? parseInt(sel.value,10) : 15;
-    S.formTotal = (mins>0?mins:15)*60;
+    S.untimed = !(mins>0);
+    S.formTotal = S.untimed ? 0 : mins*60;
+    S.elapsed = 0;
     S.responses=[]; S.analysis=null;
     var host=$("t-form"); host.innerHTML="";
     (CFG.prompts||[]).forEach(function(q,i){
@@ -85,18 +87,28 @@
       block.appendChild(lab); block.appendChild(ta); host.appendChild(block);
     });
     panel("t-run");
+    // Hide the progress bar when untimed (keep its space so the timer stays right-aligned).
+    var pb=$("t-progress"); if(pb) pb.style.visibility = S.untimed ? "hidden" : "visible";
     S.remaining=S.formTotal; drawClock();
     var first=$("sdt-a0"); if(first) first.focus();
     clearInterval(S.tick); S.tick=setInterval(onFormTick,1000);
   }
   function drawClock(){
-    var t=$("t-timer"); if(t){ t.textContent=fmtClock(Math.max(0,S.remaining)); t.classList.toggle("low", S.remaining<=30); }
-    var pb=$("t-progress"); if(pb && pb.firstElementChild && S.formTotal){ pb.firstElementChild.style.width=Math.min(100,(1-S.remaining/S.formTotal)*100)+"%"; }
+    var t=$("t-timer");
+    if(t){
+      if(S.untimed){ t.textContent=fmtClock(S.elapsed); t.classList.remove("low"); }
+      else { t.textContent=fmtClock(Math.max(0,S.remaining)); t.classList.toggle("low", S.remaining<=30); }
+    }
+    var pb=$("t-progress"); if(pb && pb.firstElementChild && !S.untimed && S.formTotal){ pb.firstElementChild.style.width=Math.min(100,(1-S.remaining/S.formTotal)*100)+"%"; }
   }
-  function onFormTick(){ S.remaining--; drawClock(); if(S.remaining<=0){ clearInterval(S.tick); finishForm(); } }
+  function onFormTick(){
+    S.elapsed++;
+    if(S.untimed){ drawClock(); return; }
+    S.remaining--; drawClock(); if(S.remaining<=0){ clearInterval(S.tick); finishForm(); }
+  }
   function finishForm(){
     clearInterval(S.tick);
-    S.formUsed = S.formTotal - Math.max(0,S.remaining);
+    S.formUsed = S.untimed ? S.elapsed : (S.formTotal - Math.max(0,S.remaining));
     S.responses = (CFG.prompts||[]).map(function(q,i){
       var ta=$("sdt-a"+i);
       return { item:{prompt:q}, text: ta?ta.value.trim():"", seconds:0 };
