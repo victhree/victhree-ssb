@@ -63,10 +63,8 @@ export default {
       return json({ error: "Server not configured (missing GEMINI_API_KEY)" }, 500, cors);
     }
 
-    const prompt = buildPrompt(mode, items);
-
     const body = {
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      contents: buildContents(mode, items),
       generationConfig: {
         temperature: 0.6,
         responseMimeType: "application/json"
@@ -185,13 +183,12 @@ function buildSdtPrompt(items) {
   ].join("\n");
 }
 
-function buildTatPrompt(items) {
-  const parts = items.map((it) => {
-    return `#${it.n} — ${it.prompt}\n   Story: ${it.response || "[left blank]"}`;
-  });
+function tatCriteria() {
   return [
     `You are an experienced, fair SSB (Services Selection Board) psychologist assessing a candidate's Thematic Apperception Test (TAT) stories from the Day-2 psychology battery.`,
-    `In the TAT the candidate is shown a hazy picture for 30 seconds, then writes a short story around a central "hero". The hero is a projection of the candidate. IMPORTANT: you are given ONLY the written story text, not the picture, so judge the story itself, never whether it matches a picture.`,
+    `For each item you are shown the same hazy picture the candidate saw (when a picture is provided) and the short story they wrote around a central "hero". The hero is a projection of the candidate.`,
+    ``,
+    `IMPORTANT about the picture: TAT pictures are deliberately hazy, blurred and ambiguous, and there is NO correct interpretation. Use the picture ONLY to (a) check the story is plausibly connected to the scene rather than ignoring it entirely, and (b) make your comments and suggestions more grounded and specific. NEVER lower your assessment because the candidate read the picture differently than you would; a creative but plausible reading is fully valid. If no picture is provided for an item, judge the story text alone.`,
     ``,
     `Judge each story on:`,
     `- A clear central hero who takes initiative and actively solves the problem using realistic, available resources (not luck, not rescue by others, not passivity).`,
@@ -207,23 +204,22 @@ function buildTatPrompt(items) {
     `  "summary": "a 3-5 sentence personality analysis in the voice of an SSB psychologist: the recurring themes across the stories, the kind of hero the candidate projects, emotional tone, realism, and overall officer potential",`,
     `  "olqs_reflected": ["<OLQ name> — brief evidence seen in the stories"],`,
     `  "olqs_to_work_on": ["<OLQ name> — brief, actionable note"],`,
-    `  "items": [ { "n": <number>, "prompt": "<the slide label, e.g. Picture 1>", "comment": "one-sentence assessment of this story: hero, initiative, structure, tone and realism", "suggestion": "one concrete way to make this story stronger and more officer-like, building only on what the candidate wrote (do NOT invent picture details)" } ]`,
+    `  "items": [ { "n": <number>, "prompt": "<the slide label, e.g. Picture 1>", "comment": "one-sentence assessment of this story: hero, initiative, structure, tone and realism", "suggestion": "one concrete way to make this story stronger and more officer-like, grounded in the picture and what the candidate wrote" } ]`,
     `}`,
-    `List 3-6 OLQs reflected and 2-4 to work on, naming actual OLQs from the list. Include an items entry for every story written. Be honest, concise and constructive.`,
-    ``,
-    `=== Candidate's TAT stories ===`,
-    ...parts
+    `List 3-6 OLQs reflected and 2-4 to work on, naming actual OLQs from the list. Include an items entry for every story written. Be honest, concise and constructive.`
   ].join("\n");
 }
+function buildTatPrompt(items) {
+  const lines = items.map((it) => `#${it.n} — ${it.prompt}\n   Story: ${it.response || "[left blank]"}`);
+  return tatCriteria() + "\n\n=== Candidate's TAT stories ===\n" + lines.join("\n");
+}
 
-function buildPpdtPrompt(items) {
-  const parts = items.map((it) => {
-    return `#${it.n} — ${it.prompt}\n   ${it.response || "[left blank]"}`;
-  });
+function ppdtCriteria() {
   return [
     `You are an experienced, fair SSB (Services Selection Board) assessor evaluating a candidate's Picture Perception and Description Test (PPDT), the Day-1 screening test.`,
-    `In PPDT the candidate sees a single hazy picture for 30 seconds, notes their perception (number of characters, and the main character's age, sex and mood), then writes a short story around a hero. Each response below is given as a "Perception" line followed by the "Story".`,
-    `IMPORTANT: you are given ONLY the candidate's typed perception and story, NOT the picture. So judge the text's internal coherence, positivity and structure, never whether it matches an actual picture.`,
+    `For each item you are shown the same hazy picture the candidate saw (when a picture is provided), followed by the candidate's typed "Perception" line (number of characters, and the main character's age, sex and mood) and their short hero "Story".`,
+    ``,
+    `IMPORTANT about the picture: PPDT pictures are deliberately hazy, blurred and ambiguous, and there is NO single correct interpretation. Use the picture ONLY to (a) sanity-check that the perception and story are plausibly connected to the scene, and (b) make your comments and suggestions more grounded. NEVER lower your assessment merely because the candidate perceived the picture differently than you would; a plausible reading is fully valid. If no picture is provided, judge the text alone.`,
     ``,
     `Judge each response on:`,
     `- Perception quality: a clear character count and the main character's age/sex/mood, leaning positive, coherent with the story that follows.`,
@@ -239,13 +235,32 @@ function buildPpdtPrompt(items) {
     `  "summary": "a 3-5 sentence assessment in the voice of an SSB screening assessor: the candidate's perception positivity, the kind of hero they project, story structure and realism, and whether this reads as screen-in material",`,
     `  "olqs_reflected": ["<OLQ name> — brief evidence seen in the responses"],`,
     `  "olqs_to_work_on": ["<OLQ name> — brief, actionable note"],`,
-    `  "items": [ { "n": <number>, "prompt": "<the slide label, e.g. Picture 1>", "comment": "one-sentence assessment: perception coherence, hero, structure, tone and realism", "suggestion": "one concrete way to make this response stronger and more officer-like, building only on what the candidate wrote (do NOT invent picture details)" } ]`,
+    `  "items": [ { "n": <number>, "prompt": "<the slide label, e.g. Picture 1>", "comment": "one-sentence assessment: perception coherence, hero, structure, tone and realism", "suggestion": "one concrete way to make this response stronger and more officer-like, grounded in the picture and what the candidate wrote" } ]`,
     `}`,
-    `List 3-6 OLQs reflected and 2-4 to work on, naming actual OLQs from the list. Include an items entry for every response. Be honest, concise and constructive.`,
-    ``,
-    `=== Candidate's PPDT responses ===`,
-    ...parts
+    `List 3-6 OLQs reflected and 2-4 to work on, naming actual OLQs from the list. Include an items entry for every response. Be honest, concise and constructive.`
   ].join("\n");
+}
+function buildPpdtPrompt(items) {
+  const lines = items.map((it) => `#${it.n} — ${it.prompt}\n   ${it.response || "[left blank]"}`);
+  return ppdtCriteria() + "\n\n=== Candidate's PPDT responses ===\n" + lines.join("\n");
+}
+
+// Build the Gemini "contents". For TAT/PPDT with pictures attached, interleave each
+// picture with its story so the model can see what the candidate was looking at.
+function buildContents(mode, items) {
+  const hasImg = Array.isArray(items) && items.some((it) => it && it.image);
+  if ((mode === "TAT" || mode === "PPDT") && hasImg) {
+    const parts = [{ text: mode === "PPDT" ? ppdtCriteria() : tatCriteria() }];
+    parts.push({ text: mode === "PPDT" ? "\n=== Candidate's PPDT responses ===" : "\n=== Candidate's TAT stories ===" });
+    for (const it of items) {
+      parts.push({ text: `\n#${it.n} — ${it.prompt}` });
+      if (it.image) parts.push({ inline_data: { mime_type: it.mimeType || "image/jpeg", data: it.image } });
+      else parts.push({ text: "(no picture available for this item)" });
+      parts.push({ text: mode === "PPDT" ? (it.response || "[left blank]") : ("Story: " + (it.response || "[left blank]")) });
+    }
+    return [{ role: "user", parts }];
+  }
+  return [{ role: "user", parts: [{ text: buildPrompt(mode, items) }] }];
 }
 
 function corsHeaders(origin) {

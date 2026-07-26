@@ -261,16 +261,42 @@
   }
 
   /* ---------- Performance analysis (via Worker) ---------- */
+  // Downscale a picture to a small base64 JPEG so the analyser can see it (same-origin, no taint).
+  function imgToBase64(url, maxDim){
+    return new Promise(function(res){
+      var im=new Image();
+      im.onload=function(){
+        try{
+          var w=im.naturalWidth, h=im.naturalHeight, s=Math.min(1, maxDim/Math.max(w,h));
+          var cw=Math.max(1,Math.round(w*s)), ch=Math.max(1,Math.round(h*s));
+          var c=document.createElement("canvas"); c.width=cw; c.height=ch;
+          c.getContext("2d").drawImage(im,0,0,cw,ch);
+          res((c.toDataURL("image/jpeg",0.72).split(",")[1])||null);
+        }catch(e){ res(null); }
+      };
+      im.onerror=function(){ res(null); };
+      im.src=url;
+    });
+  }
   function requestAI(){
     var box=$("t-ai"); box.style.display="block";
     var status=$("ai-status");
     status.innerHTML='<span class="spinner"></span>Analysing your responses… this may take a few moments.';
     $("ai-body").innerHTML="";
-    var payload={ mode:CFG.mode, items:S.responses.map(function(r,i){ return { n:i+1, prompt:promptOf(r.item), tag:tagOf(r.item), response:r.text, seconds:r.seconds }; }) };
-    fetch(AI, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload) })
-      .then(function(res){ if(!res.ok) throw new Error("HTTP "+res.status); return res.json(); })
-      .then(renderAI)
-      .catch(function(err){ status.textContent="Your performance analysis isn't available right now. Your self-review below still works."; });
+    var items=S.responses.map(function(r,i){ return { n:i+1, prompt:promptOf(r.item), tag:tagOf(r.item), response:r.text, seconds:r.seconds }; });
+    var send=function(){
+      fetch(AI, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ mode:CFG.mode, items:items }) })
+        .then(function(res){ if(!res.ok) throw new Error("HTTP "+res.status); return res.json(); })
+        .then(renderAI)
+        .catch(function(err){ status.textContent="Your performance analysis isn't available right now. Your self-review below still works."; });
+    };
+    // For picture tests, attach the (downscaled) picture each story was written from.
+    if(CFG.image){
+      Promise.all(S.responses.map(function(r,i){
+        if(r.item && r.item.image){ return imgToBase64(r.item.image, 640).then(function(b64){ if(b64){ items[i].image=b64; items[i].mimeType="image/jpeg"; } }); }
+        return Promise.resolve();
+      })).then(send, send);
+    } else { send(); }
   }
   function renderAI(data){
     $("ai-status").textContent="";
