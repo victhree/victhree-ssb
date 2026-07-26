@@ -64,8 +64,8 @@ main{padding:34px 0 30px}
 .hero .cta{display:inline-block;margin-top:18px;background:var(--gold);color:var(--navy);font-family:var(--sans);font-weight:700;text-decoration:none;padding:12px 24px;border-radius:8px}
 .hero .cta:hover{background:#cfa53c}
 .home-title{text-align:center;margin:34px 0 28px;font-size:clamp(1.15rem,5.4vw,2.4rem);text-transform:uppercase;letter-spacing:.02em;color:var(--navy);white-space:nowrap}
-.cards.home-cards{display:flex;flex-wrap:wrap;justify-content:center;max-width:660px;margin:0 auto;gap:16px}
-.cards.home-cards .card{text-align:center;padding:26px 16px;flex:0 1 312px}
+.cards.home-cards{display:grid;grid-template-columns:1fr 1fr;max-width:660px;margin:0 auto;gap:16px}
+.cards.home-cards .card{text-align:center;padding:26px 16px}
 .cards.home-cards .card h3{margin:0;font-size:clamp(1.05rem,3vw,1.45rem);white-space:nowrap}
 .card-abbr{display:block;margin-top:8px;font-family:var(--sans);font-weight:700;letter-spacing:.14em;color:var(--gold);font-size:1.1rem}
 .home-more{text-align:center;margin:24px 0 0}
@@ -78,7 +78,7 @@ main{padding:34px 0 30px}
   .home-more .ml-q{display:block}
   .cards.home-cards .card h3{font-size:clamp(1.2rem,6vw,1.5rem)}
 }
-@media(max-width:600px){.cards.home-cards{max-width:420px}.cards.home-cards .card{flex-basis:100%}}
+@media(max-width:600px){.cards.home-cards{grid-template-columns:1fr;max-width:420px}}
 
 /* CDS CTA (matches vocab/mocks sites) */
 .cta-wrap{max-width:860px;margin:0 auto;padding:0 22px}
