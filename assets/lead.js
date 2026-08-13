@@ -9,14 +9,60 @@
   var CFG = window.VICTHREE_CONFIG || {};
   var ENDPOINT = CFG.sheetEndpoint || "";
 
-  // Already captured this visitor? Do nothing.
-  try { if (localStorage.getItem(KEY)) return; } catch (e) {}
+  // Has this visitor already given their details?
+  var done = false;
+  try { done = !!localStorage.getItem(KEY); } catch (e) {}
 
   function el(tag, cls, html) {
     var n = document.createElement(tag);
     if (cls) n.className = cls;
     if (html != null) n.innerHTML = html;
     return n;
+  }
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  // Personalised motivating lines shown on the homepage to returning visitors.
+  // [big line with {name}, smaller line below]. Rotated one per visit.
+  var GREETINGS = [
+    ["Welcome back, {name}.", "The academy gate opens for those who prepare when no one is watching."],
+    ["Good to have you, {name}.", "Every officer once stood exactly where you stand today, one honest attempt at a time."],
+    ["Discipline over mood, {name}.", "Train today the way you intend to lead tomorrow."],
+    ["Steady on, {name}.", "Officer Like Qualities are built, not born, and yours are taking shape."],
+    ["{name}, the Services ask for a calm mind and a willing heart.", "Practise both, right here."],
+    ["Keep showing up, {name}.", "The uniform is earned in quiet hours like these."],
+    ["Rise a little sharper each day, {name}.", "That is what selection really measures."],
+    ["{name}, courage is a habit.", "Build it one session at a time."]
+  ];
+
+  function firstName() {
+    var raw = "";
+    try { raw = (JSON.parse(localStorage.getItem("v3_lead_data") || "{}").name) || ""; } catch (e) {}
+    raw = raw.trim();
+    if (!raw) return "";
+    var f = raw.split(/\s+/)[0];
+    return f.charAt(0).toUpperCase() + f.slice(1);
+  }
+
+  function renderGreeting() {
+    var anchor = document.querySelector(".home-title"); // homepage only
+    if (!anchor || document.querySelector(".greet")) return;
+    var name = firstName();
+    if (!name) return;
+
+    var i = 0;
+    try { i = parseInt(localStorage.getItem("v3_greet_i") || "0", 10) || 0; } catch (e) {}
+    var msg = GREETINGS[i % GREETINGS.length];
+    try { localStorage.setItem("v3_greet_i", String((i + 1) % GREETINGS.length)); } catch (e) {}
+
+    var big = esc(msg[0]).replace("{name}", '<span class="greet-name">' + esc(name) + "</span>");
+    var g = el("div", "greet");
+    g.innerHTML = '<p class="greet-big">' + big + '</p><p class="greet-small">' + esc(msg[1]) + "</p>";
+    anchor.parentNode.insertBefore(g, anchor);
   }
 
   function build() {
@@ -117,17 +163,24 @@
         setTimeout(function () {
           overlay.remove();
           document.documentElement.classList.remove("lead-open");
+          renderGreeting(); // welcome them by name straight away
         }, 260);
       });
     });
   }
 
-  // Show the popup 5 seconds after the visitor lands on the site.
+  // Show the popup 5 seconds after a new visitor lands on the site.
   var DELAY = 5000;
   function schedule() { setTimeout(show, DELAY); }
+
+  function boot() {
+    renderGreeting();          // returning visitors: greet by name
+    if (!done) schedule();     // new visitors: popup after 5s
+  }
+
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", schedule);
+    document.addEventListener("DOMContentLoaded", boot);
   } else {
-    schedule();
+    boot();
   }
 })();

@@ -331,3 +331,13 @@ html.lead-open{overflow:hidden}
   .lead-card{border-radius:14px}
   .lead-body{padding:20px 18px 20px}
 }
+
+/* ---- Personalised greeting (returning visitor, homepage) ---- */
+.greet{max-width:640px;margin:26px auto 2px;padding:16px 22px;text-align:center;
+  background:linear-gradient(135deg,#ffffff,var(--paper-2));border:1px solid var(--line-2);
+  border-radius:14px;box-shadow:0 6px 18px rgba(15,35,64,.06)}
+.greet-big{margin:0;font-family:var(--serif);font-weight:700;color:var(--navy);
+  font-size:clamp(1.12rem,4.4vw,1.5rem);line-height:1.28;text-wrap:balance}
+.greet-name{color:var(--gold)}
+.greet-small{margin:5px 0 0;font-family:var(--serif);color:var(--ink-soft);
+  font-size:clamp(.92rem,3.2vw,1.02rem);line-height:1.45}
