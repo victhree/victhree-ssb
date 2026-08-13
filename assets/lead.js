@@ -72,7 +72,7 @@
     var caret = el("span", "greet-caret");
     bigEl.appendChild(caret);
 
-    var goldSpan = null, k = 0, SPEED = 32;
+    var goldSpan = null, k = 0, SPEED = 60;
     function tick() {
       if (k >= steps.length) { caret.remove(); return; }
       var st = steps[k++];
