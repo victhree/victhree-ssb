@@ -122,9 +122,12 @@
     });
   }
 
+  // Show the popup 5 seconds after the visitor lands on the site.
+  var DELAY = 5000;
+  function schedule() { setTimeout(show, DELAY); }
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", show);
+    document.addEventListener("DOMContentLoaded", schedule);
   } else {
-    show();
+    schedule();
   }
 })();
