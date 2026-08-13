@@ -312,8 +312,8 @@ html.lead-open{overflow:hidden}
   box-shadow:0 24px 60px rgba(15,35,64,.45);
   animation:leadPop .28s cubic-bezier(.2,.9,.3,1.2) both}
 @keyframes leadPop{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
-.lead-banner{background:var(--navy);border-bottom:3px solid var(--gold);text-align:center;padding:18px 20px}
-.lead-banner img{height:46px;width:auto;max-width:100%;display:inline-block;vertical-align:middle}
+.lead-banner{background:var(--navy);border-bottom:3px solid var(--gold);padding:0;font-size:0;line-height:0}
+.lead-banner img{display:block;width:100%;height:auto}
 .lead-body{padding:24px 28px 26px}
 .lead-title{font-size:clamp(1rem,4.6vw,1.5rem);text-align:center;color:var(--navy);margin:0 0 18px;white-space:nowrap}
 .lead-form{display:flex;flex-direction:column;gap:13px}
@@ -330,6 +330,4 @@ html.lead-open{overflow:hidden}
 @media (max-width:480px){
   .lead-card{border-radius:14px}
   .lead-body{padding:20px 18px 20px}
-  .lead-banner{padding:14px 16px}
-  .lead-banner img{height:40px}
 }
