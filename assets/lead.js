@@ -27,20 +27,20 @@
 
     var card = el("div", "lead-card");
     card.innerHTML =
-      '<p class="lead-eyebrow">VicThree Defence</p>' +
-      '<h2 id="lead-title" class="lead-title">Welcome to VicThree Defence</h2>' +
-      '<p class="lead-sub">Tell us where to reach you, and step in to start your SSB practice.</p>' +
-      '<form class="lead-form" novalidate>' +
-        '<label class="lead-field"><span>Name</span>' +
-          '<input type="text" name="name" autocomplete="name" placeholder="Your full name" required></label>' +
-        '<label class="lead-field"><span>Phone number</span>' +
-          '<input type="tel" name="phone" autocomplete="tel" inputmode="numeric" placeholder="10-digit mobile number" required></label>' +
-        '<label class="lead-field"><span>Email address</span>' +
-          '<input type="email" name="email" autocomplete="email" placeholder="you@example.com" required></label>' +
-        '<p class="lead-error" role="alert"></p>' +
-        '<button type="submit" class="lead-btn">Let\'s get started</button>' +
-        '<p class="lead-note">We will only use these to share SSB guidance and updates.</p>' +
-      '</form>';
+      '<div class="lead-banner"><img src="assets/banner.png" alt="VicThree Defence, by Anmol Sharma"></div>' +
+      '<div class="lead-body">' +
+        '<h2 id="lead-title" class="lead-title">Welcome to VicThree Defence</h2>' +
+        '<form class="lead-form" novalidate>' +
+          '<label class="lead-field"><span>Name</span>' +
+            '<input type="text" name="name" autocomplete="name" required></label>' +
+          '<label class="lead-field"><span>Phone number</span>' +
+            '<input type="tel" name="phone" autocomplete="tel" inputmode="numeric" required></label>' +
+          '<label class="lead-field"><span>Email address</span>' +
+            '<input type="email" name="email" autocomplete="email" required></label>' +
+          '<p class="lead-error" role="alert"></p>' +
+          '<button type="submit" class="lead-btn">Let\'s get started</button>' +
+        '</form>' +
+      '</div>';
 
     overlay.appendChild(card);
     return overlay;
