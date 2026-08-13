@@ -341,3 +341,6 @@ html.lead-open{overflow:hidden}
 .greet-name{color:var(--gold)}
 .greet-small{margin:5px 0 0;font-family:var(--serif);color:var(--ink-soft);
   font-size:clamp(.92rem,3.2vw,1.02rem);line-height:1.45}
+.greet-caret{display:inline-block;width:2px;height:1em;margin-left:2px;background:var(--gold);
+  vertical-align:-0.12em;animation:greetBlink .8s step-end infinite}
+@keyframes greetBlink{50%{opacity:0}}

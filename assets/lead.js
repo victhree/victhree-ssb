@@ -48,6 +48,48 @@
     return f.charAt(0).toUpperCase() + f.slice(1);
   }
 
+  function typeGreeting(g, bigSegs, smallText) {
+    var bigEl = g.querySelector(".greet-big");
+    var smallEl = g.querySelector(".greet-small");
+
+    // Render the final text once to lock in the card height (no layout jump),
+    // then clear it and type it back out.
+    bigEl.innerHTML = bigSegs.map(function (s) {
+      return s.gold ? '<span class="greet-name">' + esc(s.text) + "</span>" : esc(s.text);
+    }).join("");
+    smallEl.textContent = smallText;
+    g.style.minHeight = g.offsetHeight + "px";
+    bigEl.textContent = "";
+    smallEl.textContent = "";
+
+    // Flatten to per-character steps.
+    var steps = [];
+    bigSegs.forEach(function (s) {
+      for (var i = 0; i < s.text.length; i++) steps.push({ ch: s.text[i], gold: s.gold, small: false });
+    });
+    for (var j = 0; j < smallText.length; j++) steps.push({ ch: smallText[j], gold: false, small: true });
+
+    var caret = el("span", "greet-caret");
+    bigEl.appendChild(caret);
+
+    var goldSpan = null, k = 0, SPEED = 32;
+    function tick() {
+      if (k >= steps.length) { caret.remove(); return; }
+      var st = steps[k++];
+      var line = st.small ? smallEl : bigEl;
+      if (st.gold) {
+        if (!goldSpan) { goldSpan = el("span", "greet-name"); line.appendChild(goldSpan); }
+        goldSpan.appendChild(document.createTextNode(st.ch));
+      } else {
+        goldSpan = null;
+        line.appendChild(document.createTextNode(st.ch));
+      }
+      line.appendChild(caret); // move caret to the end of the active line
+      setTimeout(tick, SPEED);
+    }
+    setTimeout(tick, 260);
+  }
+
   function renderGreeting() {
     var anchor = document.querySelector(".home-title"); // homepage only
     if (!anchor || document.querySelector(".greet")) return;
@@ -59,10 +101,27 @@
     var msg = GREETINGS[i % GREETINGS.length];
     try { localStorage.setItem("v3_greet_i", String((i + 1) % GREETINGS.length)); } catch (e) {}
 
-    var big = esc(msg[0]).replace("{name}", '<span class="greet-name">' + esc(name) + "</span>");
+    var parts = msg[0].split("{name}");
+    var bigSegs = [
+      { text: parts[0] || "", gold: false },
+      { text: name, gold: true },
+      { text: parts[1] || "", gold: false }
+    ];
+    var smallText = msg[1];
+
     var g = el("div", "greet");
-    g.innerHTML = '<p class="greet-big">' + big + '</p><p class="greet-small">' + esc(msg[1]) + "</p>";
+    g.innerHTML = '<p class="greet-big"></p><p class="greet-small"></p>';
     anchor.parentNode.insertBefore(g, anchor);
+
+    var reduce = false;
+    try { reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) {}
+    if (reduce) {
+      g.querySelector(".greet-big").innerHTML =
+        esc(bigSegs[0].text) + '<span class="greet-name">' + esc(name) + "</span>" + esc(bigSegs[2].text);
+      g.querySelector(".greet-small").textContent = smallText;
+      return;
+    }
+    typeGreeting(g, bigSegs, smallText);
   }
 
   function build() {
