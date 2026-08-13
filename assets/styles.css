@@ -300,3 +300,33 @@ details.heur ul{margin:.4em 0}
   .t-sit{font-size:1.08rem;line-height:1.4}
   .t-hint{margin-top:10px;font-size:.78rem}
 }
+
+/* ---- Welcome popup / lead capture ---- */
+html.lead-open{overflow:hidden}
+.lead-overlay{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;
+  background:rgba(15,35,64,.72);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+  animation:leadFade .25s ease both}
+.lead-overlay.lead-closing{animation:leadFade .25s ease reverse both}
+@keyframes leadFade{from{opacity:0}to{opacity:1}}
+.lead-card{width:100%;max-width:430px;background:var(--paper);border-radius:16px;border-top:5px solid var(--gold);
+  box-shadow:0 24px 60px rgba(15,35,64,.45);padding:30px 28px 26px;
+  animation:leadPop .28s cubic-bezier(.2,.9,.3,1.2) both}
+@keyframes leadPop{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
+.lead-eyebrow{font-family:var(--sans);text-transform:uppercase;letter-spacing:.18em;font-size:.68rem;font-weight:700;color:var(--gold);margin:0 0 .35em;text-align:center}
+.lead-title{font-size:clamp(1.35rem,5vw,1.7rem);text-align:center;color:var(--navy);margin:0 0 .35em;text-wrap:balance}
+.lead-sub{text-align:center;color:var(--ink-soft);font-size:.95rem;margin:0 0 20px}
+.lead-form{display:flex;flex-direction:column;gap:13px}
+.lead-field{display:flex;flex-direction:column;gap:5px}
+.lead-field span{font-family:var(--sans);font-weight:700;font-size:.74rem;text-transform:uppercase;letter-spacing:.08em;color:var(--navy)}
+.lead-field input{font-family:var(--serif);font-size:1rem;padding:11px 13px;border:1.5px solid var(--line-2);border-radius:9px;background:#fff;color:var(--ink);transition:border-color .15s,box-shadow .15s}
+.lead-field input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(184,145,47,.18)}
+.lead-error{min-height:1em;margin:2px 0 0;color:var(--danger);font-size:.85rem;font-weight:600}
+.lead-btn{margin-top:4px;background:var(--gold);color:var(--navy);font-family:var(--sans);font-weight:700;font-size:1rem;letter-spacing:.01em;border:none;padding:13px 18px;border-radius:10px;cursor:pointer;transition:background .15s,transform .1s}
+.lead-btn:hover{background:#cfa53c}
+.lead-btn:active{transform:translateY(1px)}
+.lead-btn:disabled{opacity:.7;cursor:default}
+.lead-note{margin:12px 0 0;text-align:center;font-size:.76rem;color:var(--ink-soft)}
+@media (max-width:480px){
+  .lead-card{padding:26px 20px 22px;border-radius:14px}
+  .lead-sub{margin-bottom:16px}
+}
