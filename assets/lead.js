@@ -188,18 +188,49 @@
     return Promise.resolve();
   }
 
+  // Pin the overlay to the area the keyboard leaves visible (mobile), so the
+  // whole card and its button stay reachable. Returns a cleanup function.
+  function fitToViewport(overlay) {
+    var vv = window.visualViewport;
+    if (!vv) return function () {};
+    function apply() {
+      overlay.style.height = vv.height + "px";
+      overlay.style.top = vv.offsetTop + "px";
+      overlay.style.bottom = "auto";
+    }
+    apply();
+    vv.addEventListener("resize", apply);
+    vv.addEventListener("scroll", apply);
+    return function () {
+      vv.removeEventListener("resize", apply);
+      vv.removeEventListener("scroll", apply);
+      overlay.style.height = ""; overlay.style.top = ""; overlay.style.bottom = "";
+    };
+  }
+
   function show() {
     var overlay = build();
     document.body.appendChild(overlay);
     document.documentElement.classList.add("lead-open");
+    var unfit = fitToViewport(overlay);
 
     var form = overlay.querySelector(".lead-form");
     var errBox = overlay.querySelector(".lead-error");
     var btn = overlay.querySelector(".lead-btn");
     var nameEl = form.name, phoneEl = form.phone, emailEl = form.email;
 
-    // focus first field shortly after paint
-    setTimeout(function () { try { nameEl.focus(); } catch (e) {} }, 60);
+    // Auto-focus only on desktop (fine pointer). On touch we wait for a tap so
+    // the keyboard does not immediately cover the popup.
+    var finePointer = false;
+    try { finePointer = window.matchMedia && window.matchMedia("(pointer: fine)").matches; } catch (e) {}
+    if (finePointer) setTimeout(function () { try { nameEl.focus(); } catch (e) {} }, 60);
+
+    // When a field is tapped, ease it into view above the keyboard.
+    overlay.addEventListener("focusin", function (e) {
+      setTimeout(function () {
+        try { e.target.scrollIntoView({ block: "center", behavior: "smooth" }); } catch (x) {}
+      }, 260);
+    });
 
     function fail(msg, field) {
       errBox.textContent = msg;
@@ -230,6 +261,7 @@
 
       post(data).then(function () {
         try { localStorage.setItem(KEY, "1"); } catch (e) {}
+        unfit();
         overlay.classList.add("lead-closing");
         setTimeout(function () {
           overlay.remove();

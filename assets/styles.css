@@ -303,12 +303,13 @@ details.heur ul{margin:.4em 0}
 
 /* ---- Welcome popup / lead capture ---- */
 html.lead-open{overflow:hidden}
-.lead-overlay{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;
+.lead-overlay{position:fixed;inset:0;z-index:1000;display:flex;align-items:flex-start;justify-content:center;
+  overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px;
   background:rgba(15,35,64,.72);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
   animation:leadFade .25s ease both}
 .lead-overlay.lead-closing{animation:leadFade .25s ease reverse both}
 @keyframes leadFade{from{opacity:0}to{opacity:1}}
-.lead-card{width:100%;max-width:430px;background:var(--paper);border-radius:16px;overflow:hidden;
+.lead-card{width:100%;max-width:430px;margin:auto;background:var(--paper);border-radius:16px;overflow:hidden;
   box-shadow:0 24px 60px rgba(15,35,64,.45);
   animation:leadPop .28s cubic-bezier(.2,.9,.3,1.2) both}
 @keyframes leadPop{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
