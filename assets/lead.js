@@ -9,6 +9,18 @@
   var CFG = window.VICTHREE_CONFIG || {};
   var ENDPOINT = CFG.sheetEndpoint || "";
 
+  // Folder this script lives in (assets/), so the banner resolves from any page.
+  var BASE = (function () {
+    var s = document.currentScript;
+    if (!s) {
+      var all = document.getElementsByTagName("script");
+      for (var i = all.length - 1; i >= 0; i--) {
+        if (/lead\.js/.test(all[i].src)) { s = all[i]; break; }
+      }
+    }
+    return (s && s.src ? s.src : "").replace(/[^\/]*$/, "");
+  })();
+
   // Has this visitor already given their details?
   var done = false;
   try { done = !!localStorage.getItem(KEY); } catch (e) {}
@@ -132,7 +144,7 @@
 
     var card = el("div", "lead-card");
     card.innerHTML =
-      '<div class="lead-banner"><img src="assets/banner.png" alt="VicThree Defence, by Anmol Sharma"></div>' +
+      '<div class="lead-banner"><img src="' + BASE + 'banner.png" alt="VicThree Defence, by Anmol Sharma"></div>' +
       '<div class="lead-body">' +
         '<h2 id="lead-title" class="lead-title">Welcome to VicThree Defence</h2>' +
         '<form class="lead-form" novalidate>' +
