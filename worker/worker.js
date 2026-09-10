@@ -18,6 +18,7 @@
 // custom domain here too if you set one up later.
 const ALLOWED_ORIGINS = [
   "https://victhree.github.io",
+  "https://ssb.victhreedefence.com",
   "http://localhost:8099"   // local testing; remove if you like
 ];
 
@@ -55,6 +56,7 @@ export default {
     } catch (e) {
       return json({ error: "Invalid JSON" }, 400, cors);
     }
+
     const mode = payload && (payload.mode === "SRT" || payload.mode === "SDT" || payload.mode === "TAT" || payload.mode === "PPDT" || payload.mode === "GPE") ? payload.mode : "WAT";
     const items = Array.isArray(payload && payload.items) ? payload.items.slice(0, 80) : [];
     if (!items.length) return json({ error: "No items" }, 400, cors);
