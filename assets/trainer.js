@@ -20,7 +20,59 @@
   var VIOLENT = ["kill","killed","murder","stab","shoot","destroy","revenge","beat him","beat them","hit him","hit them",
     "slap","punch","bomb","curse"];
 
-  var S = { items: [], idx: 0, responses: [], remaining: 0, startTs: 0, tick: null, analysis: null, formTotal: 0, formUsed: 0, untimed: false, elapsed: 0 };
+  var S = { items: [], idx: 0, responses: [], remaining: 0, startTs: 0, tick: null, analysis: null, formTotal: 0, formUsed: 0, untimed: false, elapsed: 0, focus: [] };
+
+  // SRT adaptivity: map each dilemma tag to the OLQs it tends to stress. Used to
+  // bias SRT question selection toward a signed-in student's weak qualities.
+  var SRT_TAG_OLQ = {
+    EMERGENCY:     ["courage", "speed_of_decision", "initiative", "stamina"],
+    ETHICAL:       ["sense_of_responsibility", "courage", "determination"],
+    INTERPERSONAL: ["social_adaptability", "cooperation", "power_of_expression"],
+    TEAM:          ["cooperation", "ability_to_influence_the_group", "organising_ability"],
+    PERSONAL:      ["determination", "self_confidence", "initiative"],
+    BIND:          ["reasoning_ability", "speed_of_decision", "sense_of_responsibility"]
+  };
+  function pickAdaptiveSRT(pool, n, focus){
+    var want = Math.round(n * 0.6);
+    var inFocus = {}; focus.forEach(function(k){ inFocus[k] = 1; });
+    function matches(it){
+      var olqs = SRT_TAG_OLQ[tagOf(it)] || [];
+      for (var i=0;i<olqs.length;i++){ if (inFocus[olqs[i]]) return true; }
+      return false;
+    }
+    var match = shuffle(pool.filter(matches));
+    var rest  = shuffle(pool.filter(function(it){ return !matches(it); }));
+    var picked = match.slice(0, Math.min(want, match.length));
+    var fill = rest.concat(match.slice(picked.length));   // rest first, then leftover matches
+    while (picked.length < n && fill.length) picked.push(fill.shift());
+    return shuffle(picked).slice(0, n);   // mix so targeted items are not all first
+  }
+
+  // Fire-and-forget: record a completed test against the signed-in student.
+  function recordAttempt(data){
+    if (!(window.V3 && V3.isSignedIn())) return;
+    if (!data || typeof data !== "object") return;
+    var PORTAL = ((window.VICTHREE_CONFIG && window.VICTHREE_CONFIG.portalEndpoint) || "").replace(/\/+$/, "");
+    if (!PORTAL) return;
+    var attempted = S.responses.filter(function(r){ return r.text && r.text.trim(); }).length;
+    var secondsUsed = S.formUsed || S.responses.reduce(function(a,r){ return a + (r.seconds || 0); }, 0);
+    var body = {
+      mode: CFG.mode,
+      items_count: S.responses.length,
+      attempted_count: attempted,
+      seconds_used: secondsUsed,
+      summary: data.summary || "",
+      reflected_keys: Array.isArray(data.reflected_keys) ? data.reflected_keys : [],
+      work_keys: Array.isArray(data.work_keys) ? data.work_keys : []
+    };
+    try {
+      fetch(PORTAL + "/api/ssb/attempt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": "Bearer " + V3.getToken() },
+        body: JSON.stringify(body)
+      }).catch(function(){});
+    } catch (e) {}
+  }
 
   function $(id){ return document.getElementById(id); }
   function el(t,c,x){ var e=document.createElement(t); if(c)e.className=c; if(x!=null)e.textContent=x; return e; }
@@ -33,10 +85,15 @@
   /* ---------- run ---------- */
   function start(){
     var pool = CFG.items || [];
-    var chosen = shuffle(pool);
     var sel = $("t-count");
     var n = sel ? parseInt(sel.value, 10) : 0;
-    if (n > 0 && n < chosen.length) chosen = chosen.slice(0, n);
+    var chosen;
+    if (CFG.mode === "SRT" && S.focus && S.focus.length && n > 0 && n < pool.length) {
+      chosen = pickAdaptiveSRT(pool, n, S.focus);   // bias toward the student's weak OLQs
+    } else {
+      chosen = shuffle(pool);
+      if (n > 0 && n < chosen.length) chosen = chosen.slice(0, n);
+    }
     S.items = chosen;
     S.idx = 0; S.responses = []; S.analysis = null;
     panel("t-run");
@@ -293,18 +350,25 @@
     $("ai-body").innerHTML="";
     var items=S.responses.map(function(r,i){ return { n:i+1, prompt:promptOf(r.item), title:(r.item&&r.item.title)||undefined, tag:tagOf(r.item), response:r.text, seconds:r.seconds }; });
     var send=function(){
-      fetch(AI, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ mode:CFG.mode, items:items }) })
+      fetch(AI, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ mode:CFG.mode, items:items, focus_olqs:(S.focus||[]) }) })
         .then(function(res){ if(!res.ok) throw new Error("HTTP "+res.status); return res.json(); })
         .then(renderAI)
         .catch(function(err){ status.textContent="Your performance analysis isn't available right now. Your self-review below still works."; });
     };
-    // For picture tests, attach the (downscaled) picture each story was written from.
-    if(CFG.image){
-      Promise.all(S.responses.map(function(r,i){
-        if(r.item && r.item.image){ return imgToBase64(r.item.image, 640).then(function(b64){ if(b64){ items[i].image=b64; items[i].mimeType="image/jpeg"; } }); }
-        return Promise.resolve();
-      })).then(send, send);
-    } else { send(); }
+    var proceed=function(){
+      // For picture tests, attach the (downscaled) picture each story was written from.
+      if(CFG.image){
+        Promise.all(S.responses.map(function(r,i){
+          if(r.item && r.item.image){ return imgToBase64(r.item.image, 640).then(function(b64){ if(b64){ items[i].image=b64; items[i].mimeType="image/jpeg"; } }); }
+          return Promise.resolve();
+        })).then(send, send);
+      } else { send(); }
+    };
+    // If signed in, make sure we have the student's weak OLQs so the analysis
+    // can target them; then proceed. Anonymous path proceeds immediately.
+    if(window.V3 && V3.isSignedIn()){
+      V3.getSSB().then(function(d){ if(d && Array.isArray(d.focus_olqs)) S.focus=d.focus_olqs; }).then(proceed, proceed);
+    } else { proceed(); }
   }
   function renderAI(data){
     $("ai-status").textContent="";
@@ -328,6 +392,7 @@
       });
     }
     if(!body.childNodes.length) body.appendChild(el("p",null,"(No analysis returned.)"));
+    recordAttempt(data);   // quietly store this attempt for signed-in students
   }
 
   /* ---------- copy responses (helper) ---------- */
@@ -478,6 +543,8 @@
     if(!CFG.form && !CFG.image && CFG.mode!=="GPE"){ var ti=$("t-input"); if(ti) ti.addEventListener("keydown", function(e){ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); commit(); } }); }
     if(hasSaved()){ var link=$("t-resume"); link.style.display="inline-block"; link.addEventListener("click", function(e){ e.preventDefault(); loadSaved(); }); }
     if(!AI){ var hint=$("ai-off-hint"); if(hint) hint.style.display="block"; }
+    // Warm the signed-in student's weak-OLQ profile so SRT selection can use it.
+    if(window.V3 && V3.isSignedIn()){ V3.getSSB().then(function(d){ if(d && Array.isArray(d.focus_olqs)) S.focus=d.focus_olqs; }); }
     // Keep the timer/progress header aligned to the top of the visible area
     // when the on-screen keyboard opens (safety net for browsers that pin
     // sticky elements to the layout viewport rather than the visual one).

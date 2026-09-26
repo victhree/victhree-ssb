@@ -272,9 +272,16 @@
     });
   }
 
+  // Course students (signed in, or carrying a portal token) are already known,
+  // so they never get the anonymous lead-capture popup.
+  function isCourseStudent() {
+    try { if (localStorage.getItem("vt_portal_token")) return true; } catch (e) {}
+    return !!(window.V3 && window.V3.isSignedIn && window.V3.isSignedIn());
+  }
+
   // Show the popup 5 seconds after a new visitor lands on the site.
   var DELAY = 5000;
-  function schedule() { setTimeout(show, DELAY); }
+  function schedule() { setTimeout(function () { if (!isCourseStudent()) show(); }, DELAY); }
 
   function boot() {
     renderGreeting();          // returning visitors: greet by name

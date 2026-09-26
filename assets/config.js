@@ -27,5 +27,15 @@ window.VICTHREE_CONFIG = {
 
   /* Advanced alternative (Apps Script Web App). Ignored if googleForm above
      is filled in. See google-sheet/SETUP.md. */
-  sheetEndpoint: ""
+  sheetEndpoint: "",
+
+  /* COURSE PORTAL (student tracking + personalisation).
+     Base URL of the portal Worker that handles identity and SSB storage.
+     Anonymous practice works fully without this; it only switches on the
+     tracking layer when a course student is signed in. */
+  portalEndpoint: "https://victhree-portal.anmolxsharma.workers.dev",
+  /* Where the "signed in" strip links for the student's progress page.
+     Change to the custom domain (e.g. https://learn.victhreedefence.com/#ssb)
+     once that is live. */
+  portalProgressUrl: "https://victhree.github.io/victhree-learn/#ssb"
 };

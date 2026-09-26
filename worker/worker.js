@@ -61,12 +61,18 @@ export default {
     const items = Array.isArray(payload && payload.items) ? payload.items.slice(0, 80) : [];
     if (!items.length) return json({ error: "No items" }, 400, cors);
 
+    // Optional: the qualities this candidate is currently weakest on, so the
+    // analysis can steer its suggestions toward them. Keys only, capped.
+    const focus = Array.isArray(payload && payload.focus_olqs)
+      ? payload.focus_olqs.filter((x) => typeof x === "string" && OLQ_KEYS.indexOf(x) !== -1).slice(0, 5)
+      : [];
+
     if (!env.GEMINI_API_KEY) {
       return json({ error: "Server not configured (missing GEMINI_API_KEY)" }, 500, cors);
     }
 
     const body = {
-      contents: buildContents(mode, items),
+      contents: buildContents(mode, items, focus),
       generationConfig: {
         temperature: 0.6,
         responseMimeType: "application/json"
@@ -122,11 +128,38 @@ export default {
   }
 };
 
-function buildPrompt(mode, items) {
-  if (mode === "SDT") return buildSdtPrompt(items);
-  if (mode === "TAT") return buildTatPrompt(items);
-  if (mode === "PPDT") return buildPpdtPrompt(items);
-  if (mode === "GPE") return buildGpePrompt(items);
+// The 15 canonical OLQ keys the course portal aggregates on. The model must
+// emit reflected_keys / work_keys using ONLY these exact strings.
+const OLQ_KEYS = [
+  "effective_intelligence", "reasoning_ability", "organising_ability",
+  "power_of_expression", "social_adaptability", "cooperation",
+  "sense_of_responsibility", "initiative", "self_confidence",
+  "speed_of_decision", "ability_to_influence_the_group", "liveliness",
+  "determination", "courage", "stamina"
+];
+
+// Shared trailing instruction: force the machine-readable keys, and (optionally)
+// steer suggestions toward the qualities the candidate is currently weak on.
+function keyGuidance(focus) {
+  const lines = [
+    ``,
+    `ALSO return two machine-readable arrays named "reflected_keys" and "work_keys".`,
+    `Use ONLY these exact snake_case keys, nothing else (no spaces, no capitals, no new strings):`,
+    OLQ_KEYS.join(", ") + ".",
+    `"reflected_keys" must correspond to the strengths you described in "olqs_reflected", and "work_keys" to the weak points in "olqs_to_work_on". Put one or more keys in each array; never invent a key outside the list.`
+  ];
+  if (Array.isArray(focus) && focus.length) {
+    lines.push(``);
+    lines.push(`This candidate is currently weak on: ${focus.join(", ")}. Where genuinely applicable, make your per-item "suggestion" show how the same response could have better demonstrated these specific qualities. Do not force it where it does not fit, and never invent facts about the candidate.`);
+  }
+  return lines.join("\n");
+}
+
+function buildPrompt(mode, items, focus) {
+  if (mode === "SDT") return buildSdtPrompt(items, focus);
+  if (mode === "TAT") return buildTatPrompt(items, focus);
+  if (mode === "PPDT") return buildPpdtPrompt(items, focus);
+  if (mode === "GPE") return buildGpePrompt(items, focus);
   const testName =
     mode === "SRT" ? "Situation Reaction Test (SRT)" : "Word Association Test (WAT)";
   const lines = items.map((it) => {
@@ -145,16 +178,19 @@ function buildPrompt(mode, items) {
     `  "summary": "a 3-5 sentence personality analysis of the candidate in the voice of an SSB psychologist, describing overall temperament, emotional stability and officer potential based on these responses",`,
     `  "olqs_reflected": ["<OLQ name> — brief evidence seen in the responses"],`,
     `  "olqs_to_work_on": ["<OLQ name> — brief, actionable note"],`,
+    `  "reflected_keys": ["<one or more of the 15 canonical keys>"],`,
+    `  "work_keys": ["<one or more of the 15 canonical keys>"],`,
     `  "items": [ { "n": <number>, "prompt": "<the word/situation>", "comment": "one-sentence assessment of this response", "suggestion": "one better alternative response" } ]`,
     `}`,
     `List 3-6 OLQs reflected and 2-4 OLQs to work on, naming actual OLQs from the list. Include an items entry for every response. Be honest, concise and constructive.`,
+    keyGuidance(focus),
     ``,
     `=== Candidate's ${mode} responses ===`,
     ...lines
   ].join("\n");
 }
 
-function buildSdtPrompt(items) {
+function buildSdtPrompt(items, focus) {
   const parts = items.map((it) => {
     return `#${it.n} — Prompt: ${it.prompt}\n   Answer: ${it.response || "[left blank]"}`;
   });
@@ -177,16 +213,19 @@ function buildSdtPrompt(items) {
     `  "summary": "a 3-5 sentence personality analysis in the voice of an SSB psychologist: the candidate's self-awareness, emotional maturity, how consistent the five parts are with one another, and overall officer potential",`,
     `  "olqs_reflected": ["<OLQ name> — brief evidence seen in the self-description"],`,
     `  "olqs_to_work_on": ["<OLQ name> — brief, actionable note"],`,
+    `  "reflected_keys": ["<one or more of the 15 canonical keys>"],`,
+    `  "work_keys": ["<one or more of the 15 canonical keys>"],`,
     `  "items": [ { "n": <number>, "prompt": "<short label for the viewpoint, e.g. Parents' opinion>", "comment": "one-sentence assessment of this part: honesty, evidence, balance and consistency", "suggestion": "one sharper, more authentic way to express this part, WITHOUT inventing new facts about the candidate's life" } ]`,
     `}`,
     `List 3-6 OLQs reflected and 2-4 to work on, naming actual OLQs from the list. Include an items entry for every prompt answered. Be honest, concise and constructive.`,
+    keyGuidance(focus),
     ``,
     `=== Candidate's Self-Description responses ===`,
     ...parts
   ].join("\n");
 }
 
-function tatCriteria() {
+function tatCriteria(focus) {
   return [
     `You are an experienced, fair SSB (Services Selection Board) psychologist assessing a candidate's Thematic Apperception Test (TAT) stories from the Day-2 psychology battery.`,
     `For each item you are shown the same hazy picture the candidate saw (when a picture is provided) and the short story they wrote around a central "hero". The hero is a projection of the candidate.`,
@@ -207,17 +246,20 @@ function tatCriteria() {
     `  "summary": "a 3-5 sentence personality analysis in the voice of an SSB psychologist: the recurring themes across the stories, the kind of hero the candidate projects, emotional tone, realism, and overall officer potential",`,
     `  "olqs_reflected": ["<OLQ name> — brief evidence seen in the stories"],`,
     `  "olqs_to_work_on": ["<OLQ name> — brief, actionable note"],`,
+    `  "reflected_keys": ["<one or more of the 15 canonical keys>"],`,
+    `  "work_keys": ["<one or more of the 15 canonical keys>"],`,
     `  "items": [ { "n": <number>, "prompt": "<the slide label, e.g. Picture 1>", "comment": "one-sentence assessment of this story: hero, initiative, structure, tone and realism", "suggestion": "one concrete way to make this story stronger and more officer-like, grounded in the picture and what the candidate wrote" } ]`,
     `}`,
-    `List 3-6 OLQs reflected and 2-4 to work on, naming actual OLQs from the list. Include an items entry for every story written. Be honest, concise and constructive.`
+    `List 3-6 OLQs reflected and 2-4 to work on, naming actual OLQs from the list. Include an items entry for every story written. Be honest, concise and constructive.`,
+    keyGuidance(focus)
   ].join("\n");
 }
-function buildTatPrompt(items) {
+function buildTatPrompt(items, focus) {
   const lines = items.map((it) => `#${it.n} — ${it.prompt}\n   Story: ${it.response || "[left blank]"}`);
-  return tatCriteria() + "\n\n=== Candidate's TAT stories ===\n" + lines.join("\n");
+  return tatCriteria(focus) + "\n\n=== Candidate's TAT stories ===\n" + lines.join("\n");
 }
 
-function ppdtCriteria() {
+function ppdtCriteria(focus) {
   return [
     `You are an experienced, fair SSB (Services Selection Board) assessor evaluating a candidate's Picture Perception and Description Test (PPDT), the Day-1 screening test.`,
     `For each item you are shown the same hazy picture the candidate saw (when a picture is provided), followed by the candidate's typed "Perception" line (number of characters, and the main character's age, sex and mood) and their short hero "Story".`,
@@ -238,17 +280,20 @@ function ppdtCriteria() {
     `  "summary": "a 3-5 sentence assessment in the voice of an SSB screening assessor: the candidate's perception positivity, the kind of hero they project, story structure and realism, and whether this reads as screen-in material",`,
     `  "olqs_reflected": ["<OLQ name> — brief evidence seen in the responses"],`,
     `  "olqs_to_work_on": ["<OLQ name> — brief, actionable note"],`,
+    `  "reflected_keys": ["<one or more of the 15 canonical keys>"],`,
+    `  "work_keys": ["<one or more of the 15 canonical keys>"],`,
     `  "items": [ { "n": <number>, "prompt": "<the slide label, e.g. Picture 1>", "comment": "one-sentence assessment: perception coherence, hero, structure, tone and realism", "suggestion": "one concrete way to make this response stronger and more officer-like, grounded in the picture and what the candidate wrote" } ]`,
     `}`,
-    `List 3-6 OLQs reflected and 2-4 to work on, naming actual OLQs from the list. Include an items entry for every response. Be honest, concise and constructive.`
+    `List 3-6 OLQs reflected and 2-4 to work on, naming actual OLQs from the list. Include an items entry for every response. Be honest, concise and constructive.`,
+    keyGuidance(focus)
   ].join("\n");
 }
-function buildPpdtPrompt(items) {
+function buildPpdtPrompt(items, focus) {
   const lines = items.map((it) => `#${it.n} — ${it.prompt}\n   ${it.response || "[left blank]"}`);
-  return ppdtCriteria() + "\n\n=== Candidate's PPDT responses ===\n" + lines.join("\n");
+  return ppdtCriteria(focus) + "\n\n=== Candidate's PPDT responses ===\n" + lines.join("\n");
 }
 
-function buildGpePrompt(items) {
+function buildGpePrompt(items, focus) {
   const parts = items.map((it) => {
     const label = it.title ? it.title : ("Scenario " + it.n);
     return `#${it.n} — ${label}\n   Scenario: ${it.prompt}\n   Candidate's plan: ${it.response || "[left blank]"}`;
@@ -274,9 +319,12 @@ function buildGpePrompt(items) {
     `  "summary": "a 3-5 sentence assessment in the voice of a GTO: how well the candidate grasped the situation, prioritised human life, delegated and used resources, kept the plan time-bound and realistic, and their overall planning ability",`,
     `  "olqs_reflected": ["<OLQ name> — brief evidence seen in the plan"],`,
     `  "olqs_to_work_on": ["<OLQ name> — brief, actionable note"],`,
+    `  "reflected_keys": ["<one or more of the 15 canonical keys>"],`,
+    `  "work_keys": ["<one or more of the 15 canonical keys>"],`,
     `  "items": [ { "n": <number>, "prompt": "<the scenario title>", "comment": "one-sentence assessment: completeness, prioritisation, delegation, realism and structure", "suggestion": "one concrete way to make this plan stronger and more officer-like, grounded in the scenario" } ]`,
     `}`,
     `List 3-6 OLQs reflected and 2-4 to work on, naming actual OLQs. Include an items entry for every scenario. Be honest, concise and constructive.`,
+    keyGuidance(focus),
     ``,
     `=== Candidate's GPE plans ===`,
     ...parts
@@ -285,10 +333,10 @@ function buildGpePrompt(items) {
 
 // Build the Gemini "contents". For TAT/PPDT with pictures attached, interleave each
 // picture with its story so the model can see what the candidate was looking at.
-function buildContents(mode, items) {
+function buildContents(mode, items, focus) {
   const hasImg = Array.isArray(items) && items.some((it) => it && it.image);
   if ((mode === "TAT" || mode === "PPDT") && hasImg) {
-    const parts = [{ text: mode === "PPDT" ? ppdtCriteria() : tatCriteria() }];
+    const parts = [{ text: mode === "PPDT" ? ppdtCriteria(focus) : tatCriteria(focus) }];
     parts.push({ text: mode === "PPDT" ? "\n=== Candidate's PPDT responses ===" : "\n=== Candidate's TAT stories ===" });
     for (const it of items) {
       parts.push({ text: `\n#${it.n} — ${it.prompt}` });
@@ -298,7 +346,7 @@ function buildContents(mode, items) {
     }
     return [{ role: "user", parts }];
   }
-  return [{ role: "user", parts: [{ text: buildPrompt(mode, items) }] }];
+  return [{ role: "user", parts: [{ text: buildPrompt(mode, items, focus) }] }];
 }
 
 function corsHeaders(origin) {

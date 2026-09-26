@@ -333,6 +333,15 @@ html.lead-open{overflow:hidden}
   .lead-body{padding:20px 18px 20px}
 }
 
+/* ---- Course-student sign-in strip ---- */
+.v3-strip{font-family:var(--sans);font-size:.82rem;text-align:center;padding:7px 14px;
+  background:var(--paper-2);border-bottom:1px solid var(--line-2);color:var(--ink-soft)}
+.v3-strip.in{background:#eef2f8;color:var(--navy);border-bottom-color:#d7e0ee}
+.v3-strip .v3-msg{display:inline}
+.v3-link{background:none;border:none;padding:0;margin-left:4px;font:inherit;cursor:pointer;
+  color:var(--gold);font-weight:700;text-decoration:underline;text-underline-offset:2px}
+.v3-link:hover{color:var(--navy)}
+
 /* ---- Personalised greeting (returning visitor, homepage) ---- */
 .greet{max-width:640px;margin:26px auto 2px;padding:16px 22px;text-align:center;
   background:linear-gradient(135deg,#ffffff,var(--paper-2));border:1px solid var(--line-2);
