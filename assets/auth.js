@@ -53,7 +53,7 @@
   // 2) Validate a stored token against the portal.
   function validate() {
     var t = getToken();
-    if (!t || !PORTAL) return Promise.resolve(null);
+    if (!t || !PORTAL) { renderStrip(); return Promise.resolve(null); } // show the sign-in affordance
     return fetch(PORTAL + "/api/me", { headers: authHeaders() })
       .then(function (r) {
         if (r.status === 200) return r.json();
