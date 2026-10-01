@@ -293,7 +293,9 @@
     } else if (tier === "free") {
       strip.className = "v3-strip free";
       strip.innerHTML = '<span class="v3-msg">Free tier: PPDT &middot; WAT &middot; SRT, once a day each. ' +
-        '<a class="v3-link" href="' + esc(COURSE_URL) + '">See the full course &rarr;</a></span>';
+        '<a class="v3-link" href="' + esc(COURSE_URL) + '">See the full course &rarr;</a>' +
+        ' &middot; <button type="button" class="v3-link" data-v3signin>Course student? Sign in</button></span>';
+      strip.addEventListener("click", function (e) { if (e.target && e.target.hasAttribute("data-v3signin")) openGate("signin"); });
     } else {
       strip.innerHTML = '<span class="v3-msg">Course student or exploring? <button type="button" class="v3-link" data-v3open>Get started</button></span>';
       strip.addEventListener("click", function (e) { if (e.target && e.target.hasAttribute("data-v3open")) openGate("choice"); });
