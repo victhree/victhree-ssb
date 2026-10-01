@@ -168,7 +168,6 @@
               '<button type="button" class="lead-btn" data-go="signin">Yes, I am enrolled</button>' +
               '<button type="button" class="btn ghost v3-ghost" data-go="free">Not yet</button>' +
             '</div>' +
-            '<p class="lead-note"><button type="button" class="link-btn" data-act="later">Maybe later</button></p>' +
           '</div>' +
 
           '<div class="v3-step" data-step="signin" style="display:none">' +
@@ -216,7 +215,6 @@
       var go = e.target.getAttribute && e.target.getAttribute("data-go");
       if (go) { showStep(go); if (go === "signin") { var em = overlay.querySelector('[name="s_email"]'); setTimeout(function () { try { em.focus(); } catch (x) {} }, 60); } return; }
       var act = e.target.getAttribute && e.target.getAttribute("data-act");
-      if (act === "later") { close(); return; }
       if (act === "send-code") { onSendCode(overlay, e.target); return; }
       if (act === "verify") { onVerify(overlay, e.target, close); return; }
     });
