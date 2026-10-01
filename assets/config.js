@@ -37,5 +37,8 @@ window.VICTHREE_CONFIG = {
   /* Where the "signed in" strip links for the student's progress page.
      Change to the custom domain (e.g. https://learn.victhreedefence.com/#ssb)
      once that is live. */
-  portalProgressUrl: "https://victhree.github.io/victhree-learn/#ssb"
+  portalProgressUrl: "https://victhree.github.io/victhree-learn/#ssb",
+
+  /* The course / enrol page that free-tier upsell buttons link to. */
+  courseUrl: "https://victhreedefence.com"
 };

@@ -48,23 +48,29 @@
     return shuffle(picked).slice(0, n);   // mix so targeted items are not all first
   }
 
-  // Fire-and-forget: record a completed test against the signed-in student.
+  // Fire-and-forget: record a completed test. Course attempts build the OLQ
+  // profile; free attempts start that mode's 24h clock. (Both go to the portal.)
   function recordAttempt(data){
-    if (!(window.V3 && V3.isSignedIn())) return;
+    if (!(window.V3 && V3.hasToken())) return;
     if (!data || typeof data !== "object") return;
     var PORTAL = ((window.VICTHREE_CONFIG && window.VICTHREE_CONFIG.portalEndpoint) || "").replace(/\/+$/, "");
     if (!PORTAL) return;
-    var attempted = S.responses.filter(function(r){ return r.text && r.text.trim(); }).length;
-    var secondsUsed = S.formUsed || S.responses.reduce(function(a,r){ return a + (r.seconds || 0); }, 0);
-    var body = {
-      mode: CFG.mode,
-      items_count: S.responses.length,
-      attempted_count: attempted,
-      seconds_used: secondsUsed,
-      summary: data.summary || "",
-      reflected_keys: Array.isArray(data.reflected_keys) ? data.reflected_keys : [],
-      work_keys: Array.isArray(data.work_keys) ? data.work_keys : []
-    };
+    var body;
+    if (V3.getTier() === "course") {
+      var attempted = S.responses.filter(function(r){ return r.text && r.text.trim(); }).length;
+      var secondsUsed = S.formUsed || S.responses.reduce(function(a,r){ return a + (r.seconds || 0); }, 0);
+      body = {
+        mode: CFG.mode,
+        items_count: S.responses.length,
+        attempted_count: attempted,
+        seconds_used: secondsUsed,
+        summary: data.summary || "",
+        reflected_keys: Array.isArray(data.reflected_keys) ? data.reflected_keys : [],
+        work_keys: Array.isArray(data.work_keys) ? data.work_keys : []
+      };
+    } else {
+      body = { mode: CFG.mode };   // free: only mode is needed
+    }
     try {
       fetch(PORTAL + "/api/ssb/attempt", {
         method: "POST",
@@ -81,6 +87,54 @@
   function suggLabel(){ return CFG.mode==="SDT" ? "Suggested refinement: " : (CFG.mode==="GPE" ? "A stronger plan: " : ((CFG.mode==="TAT"||CFG.mode==="PPDT") ? "A stronger version: " : "Better alternative: ")); }
   function tagOf(it){ return it.tag || it.type || ""; }
   function shuffle(a){ a=a.slice(); for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i];a[i]=a[j];a[j]=t;} return a; }
+
+  /* ---------- access tiers (free vs course) ---------- */
+  var COURSE_URL = (window.VICTHREE_CONFIG && window.VICTHREE_CONFIG.courseUrl) || "https://victhreedefence.com";
+  var LOCKED_MODES = { SDT:1, TAT:1, GPE:1 };   // free users cannot run these
+  function homeHref(){ var b=document.querySelector(".brand"); return (b && b.getAttribute("href")) || "index.html"; }
+  function fmtRetry(ms){ var mins=Math.max(0,Math.round((ms||0)/60000)); return mins>=60 ? (Math.floor(mins/60)+"h "+(mins%60)+"m") : (mins+"m"); }
+  function tierPanel(html){
+    var intro=$("t-intro"); if(!intro) return;
+    var ctrl=intro.querySelector(".t-controls"); if(ctrl) ctrl.style.display="none";
+    var old=intro.querySelector(".v3-gatemsg"); if(old) old.remove();
+    var box=el("div","v3-gatemsg"); box.innerHTML=html; intro.appendChild(box);
+    panel("t-intro");
+  }
+  function showLocked(){
+    tierPanel(
+      '<h2 class="v3-gate-h">Part of the full course</h2>'+
+      '<p class="v3-gate-b">TAT, GPE and SDT are reserved for VicThree course cadets. They need detailed, personalised assessment, not just a timer. Your free practice covers PPDT, WAT and SRT.</p>'+
+      '<div class="v3-gate-actions"><a class="btn primary" href="'+COURSE_URL+'">See the course &rarr;</a> <a class="btn ghost" href="'+homeHref()+'">Back to free tests</a></div>'
+    );
+  }
+  function showLimit(ms){
+    tierPanel(
+      '<h2 class="v3-gate-h">You have used today’s free '+CFG.mode+'</h2>'+
+      '<p class="v3-gate-b">Your free '+CFG.mode+' resets in '+fmtRetry(ms)+'. Come back then, or explore the full course for all six tests, unlimited practice and your saved progress.</p>'+
+      '<div class="v3-gate-actions"><a class="btn primary" href="'+COURSE_URL+'">See the course &rarr;</a> <a class="btn ghost" href="'+homeHref()+'">Try a different test</a></div>'
+    );
+  }
+  function applyFreeCaps(){
+    var sel=$("t-count"); if(!sel) return;
+    var keep = CFG.mode==="WAT" ? "10" : (CFG.mode==="SRT" ? "10" : (CFG.mode==="PPDT" ? "1" : null));
+    if(keep==null) return;
+    [].slice.call(sel.options).forEach(function(o){ if(o.value!==keep && o.parentNode) o.parentNode.removeChild(o); });
+    sel.value=keep;
+  }
+  function applyTierUI(){
+    if(!window.V3) return;
+    if(V3.getTier()==="free"){ if(LOCKED_MODES[CFG.mode]) showLocked(); else applyFreeCaps(); }
+  }
+  function gatedStart(fn){
+    if(!(window.V3 && V3.hasToken())){ if(window.V3 && V3.openGate) V3.openGate("choice"); return; }
+    V3.allow(CFG.mode).then(function(res){
+      if(res && res.allowed){ fn(); return; }
+      if(res && res.reason==="locked"){ showLocked(); return; }
+      if(res && res.reason==="daily_limit"){ showLimit(res.retry_after_ms); return; }
+      if(res && res.reason==="auth"){ if(V3.openGate) V3.openGate("choice"); return; }
+      fn(); // network/unknown: fail open so a portal hiccup never blocks practice
+    });
+  }
 
   /* ---------- run ---------- */
   function start(){
@@ -530,7 +584,8 @@
 
   /* ---------- wire ---------- */
   document.addEventListener("DOMContentLoaded", function(){
-    $("t-start").addEventListener("click", CFG.image ? startImage : (CFG.form ? startForm : start));
+    var startFn = CFG.image ? startImage : (CFG.form ? startForm : start);
+    $("t-start").addEventListener("click", function(){ gatedStart(startFn); });
     var nextBtn=$("t-next"); if(nextBtn) nextBtn.addEventListener("click", commit);
     var skipBtn=$("t-skip"); if(skipBtn) skipBtn.addEventListener("click", skip);
     var finishBtn=$("t-finish"); if(finishBtn) finishBtn.addEventListener("click", finishForm);
@@ -543,8 +598,15 @@
     if(!CFG.form && !CFG.image && CFG.mode!=="GPE"){ var ti=$("t-input"); if(ti) ti.addEventListener("keydown", function(e){ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); commit(); } }); }
     if(hasSaved()){ var link=$("t-resume"); link.style.display="inline-block"; link.addEventListener("click", function(e){ e.preventDefault(); loadSaved(); }); }
     if(!AI){ var hint=$("ai-off-hint"); if(hint) hint.style.display="block"; }
-    // Warm the signed-in student's weak-OLQ profile so SRT selection can use it.
-    if(window.V3 && V3.isSignedIn()){ V3.getSSB().then(function(d){ if(d && Array.isArray(d.focus_olqs)) S.focus=d.focus_olqs; }); }
+    // Apply tier UI (free locks / option caps) once identity is known, and warm
+    // the course student's weak-OLQ profile for SRT adaptivity.
+    if(window.V3 && V3.ready){
+      V3.ready.then(function(){
+        applyTierUI();
+        if(V3.isSignedIn()){ V3.getSSB().then(function(d){ if(d && Array.isArray(d.focus_olqs)) S.focus=d.focus_olqs; }); }
+      });
+    }
+    document.addEventListener("v3:identity", function(){ applyTierUI(); });
     // Keep the timer/progress header aligned to the top of the visible area
     // when the on-screen keyboard opens (safety net for browsers that pin
     // sticky elements to the layout viewport rather than the visual one).
