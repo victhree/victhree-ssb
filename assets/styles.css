@@ -267,6 +267,9 @@ tbody tr:nth-child(even),tbody tr:nth-child(even){background:var(--paper-2)}
 .ai-card.reflected h4{color:var(--ok)}
 .ai-card.work{background:#f8f2e2;border-color:#e9dcb8}
 .ai-card.work h4{color:#8a6d1e}
+.ai-card.redflag{background:#fbecea;border:1px solid #e3b7b0;border-left:5px solid var(--danger)}
+.ai-card.redflag h4{color:var(--danger);text-transform:uppercase;letter-spacing:.04em;font-family:var(--sans);font-size:.82rem}
+.ai-card.redflag li{color:var(--ink)}
 .spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--line-2);border-top-color:var(--navy);border-radius:50%;animation:spin .8s linear infinite;vertical-align:middle;margin-right:8px}
 @keyframes spin{to{transform:rotate(360deg)}}
 

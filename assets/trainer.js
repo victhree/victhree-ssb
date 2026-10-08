@@ -66,7 +66,8 @@
         seconds_used: secondsUsed,
         summary: data.summary || "",
         reflected_keys: Array.isArray(data.reflected_keys) ? data.reflected_keys : [],
-        work_keys: Array.isArray(data.work_keys) ? data.work_keys : []
+        work_keys: Array.isArray(data.work_keys) ? data.work_keys : [],
+        red_flags: Array.isArray(data.red_flags) ? data.red_flags.filter(function(f){ return f && String(f).trim(); }) : []
       };
     } else {
       body = { mode: CFG.mode };   // free: only mode is needed
@@ -429,6 +430,8 @@
     var body=$("ai-body"); body.innerHTML="";
     S.analysis = (data && typeof data === "object") ? data : null;
     if(typeof data==="string"){ body.appendChild(el("p",null,data)); return; }
+    var flags = Array.isArray(data.red_flags) ? data.red_flags.filter(function(f){ return f && String(f).trim(); }) : [];
+    if(flags.length){ var cf=el("div","ai-card redflag"); cf.appendChild(el("h4",null,"Serious concern")); var uf=el("ul"); flags.forEach(function(f){ uf.appendChild(el("li",null,f)); }); cf.appendChild(uf); body.appendChild(cf); }
     if(data.summary){ var c1=el("div","ai-card snapshot"); c1.appendChild(el("h4",null,"Personality snapshot")); c1.appendChild(el("p",null,data.summary)); body.appendChild(c1); }
     var reflected = data.olqs_reflected || data.strengths;
     if(reflected&&reflected.length){ var c2=el("div","ai-card reflected"); c2.appendChild(el("h4",null,"Officer-Like Qualities reflected")); var u=el("ul"); reflected.forEach(function(s){u.appendChild(el("li",null,s));}); c2.appendChild(u); body.appendChild(c2); }
