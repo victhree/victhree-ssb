@@ -26,8 +26,8 @@ const ALLOWED_ORIGINS = [
 // first so normal requests succeed on the first try; the rest are fallbacks.
 // (Dead/aliased names removed; they only wasted time failing.)
 const MODELS = [
-  "gemini-3.8-flash",
-  "gemini-3-flash-preview"
+  "gemini-3-flash-preview",
+  "gemini-3.8-flash"
 ];
 // Abort a single model call if it stalls, so one slow model can't hang the whole
 // request into a dropped connection. We make two passes with a short backoff so
