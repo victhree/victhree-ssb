@@ -22,15 +22,20 @@ const ALLOWED_ORIGINS = [
   "http://localhost:8099"   // local testing; remove if you like
 ];
 
-// Gemini models to try, in order. The Worker uses the first one that
-// succeeds for your account's free tier. Reorder / trim as you like.
+// Gemini models to try, in order. The first one your key actually serves goes
+// first so normal requests succeed on the first try; the rest are fallbacks.
+// (Dead/aliased names removed; they only wasted time failing.)
 const MODELS = [
-  "gemini-2.5-flash",
-  "gemini-flash-latest",
   "gemini-3-flash-preview",
-  "gemini-2.0-flash",
-  "gemini-2.0-flash-lite"
+  "gemini-2.5-flash",
+  "gemini-2.0-flash"
 ];
+// Abort a single model call if it stalls, so one slow model can't hang the whole
+// request into a dropped connection. We make two passes with a short backoff so
+// a transient 429/503 (free-tier throttling or model overload) can self-heal.
+const MODEL_TIMEOUT_MS = 30000;
+const PASSES = 2;
+const PASS_BACKOFF_MS = 1500;
 
 export default {
   async fetch(request, env) {
@@ -79,37 +84,44 @@ export default {
       }
     };
 
-    // Try each model in turn; use the first that your free tier serves.
+    // Try each model in turn; first success wins. Two passes with a short
+    // backoff, and a per-model timeout, so transient throttling or a stalled
+    // model does not fail the whole request.
     let text = null, usedModel = null, lastErr = "";
-    for (const model of MODELS) {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${env.GEMINI_API_KEY}`;
-      let gemRes;
-      try {
-        gemRes = await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body)
-        });
-      } catch (e) {
-        lastErr = "fetch failed for " + model;
-        continue;
+    outer:
+    for (let pass = 0; pass < PASSES; pass++) {
+      if (pass > 0) await new Promise((r) => setTimeout(r, PASS_BACKOFF_MS));
+      for (const model of MODELS) {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${env.GEMINI_API_KEY}`;
+        let gemRes;
+        try {
+          gemRes = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+            signal: AbortSignal.timeout(MODEL_TIMEOUT_MS)
+          });
+        } catch (e) {
+          lastErr = "fetch failed/timed out for " + model;
+          continue;
+        }
+        if (!gemRes.ok) {
+          const t = await gemRes.text();
+          lastErr = model + " → " + gemRes.status + ": " + t.slice(0, 400);
+          continue;
+        }
+        const data = await gemRes.json();
+        const t =
+          data &&
+          data.candidates &&
+          data.candidates[0] &&
+          data.candidates[0].content &&
+          data.candidates[0].content.parts &&
+          data.candidates[0].content.parts[0] &&
+          data.candidates[0].content.parts[0].text;
+        if (t) { text = t; usedModel = model; break outer; }
+        lastErr = "empty response from " + model;
       }
-      if (!gemRes.ok) {
-        const t = await gemRes.text();
-        lastErr = model + " → " + gemRes.status + ": " + t.slice(0, 400);
-        continue;
-      }
-      const data = await gemRes.json();
-      const t =
-        data &&
-        data.candidates &&
-        data.candidates[0] &&
-        data.candidates[0].content &&
-        data.candidates[0].content.parts &&
-        data.candidates[0].content.parts[0] &&
-        data.candidates[0].content.parts[0].text;
-      if (t) { text = t; usedModel = model; break; }
-      lastErr = "empty response from " + model;
     }
 
     if (!text) {
