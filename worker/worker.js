@@ -38,106 +38,109 @@ const PASS_BACKOFF_MS = 1500;
 
 export default {
   async fetch(request, env) {
+    const url = new URL(request.url);
     const origin = request.headers.get("Origin") || "";
     const cors = corsHeaders(origin);
 
-    // Preflight
-    if (request.method === "OPTIONS") {
-      return new Response(null, { status: 204, headers: cors });
+    if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
+    if (request.method !== "POST") return json({ error: "Use POST" }, 405, cors);
+
+    const engineKey = request.headers.get("X-Engine-Key") || "";
+    const hasSecret = !!env.ENGINE_SHARED_SECRET && engineKey === env.ENGINE_SHARED_SECRET;
+
+    // Weekly synthesis: portal-only, server-to-server. Requires the shared secret.
+    if (url.pathname === "/analyze/weekly") {
+      if (!hasSecret) return json({ error: "Unauthorized" }, 401, cors);
+      return handleWeekly(request, env, cors);
     }
-    if (request.method !== "POST") {
-      return json({ error: "Use POST" }, 405, cors);
-    }
-    // Basic origin guard (note: browsers enforce this; non-browser clients
-    // can spoof Origin, so ALSO set a usage cap on your Google API key).
-    if (origin && !ALLOWED_ORIGINS.includes(origin)) {
+
+    // Session analysis: "/analyze/session" or root. Allowed for a browser from an
+    // allowed origin, or a server call carrying the shared secret.
+    if (!hasSecret && origin && !ALLOWED_ORIGINS.includes(origin)) {
       return json({ error: "Origin not allowed" }, 403, cors);
     }
-
-    let payload;
-    try {
-      payload = await request.json();
-    } catch (e) {
-      return json({ error: "Invalid JSON" }, 400, cors);
-    }
-
-    const mode = payload && (payload.mode === "SRT" || payload.mode === "SDT" || payload.mode === "TAT" || payload.mode === "PPDT" || payload.mode === "GPE") ? payload.mode : "WAT";
-    const items = Array.isArray(payload && payload.items) ? payload.items.slice(0, 80) : [];
-    if (!items.length) return json({ error: "No items" }, 400, cors);
-
-    // Optional: the qualities this candidate is currently weakest on, so the
-    // analysis can steer its suggestions toward them. Keys only, capped.
-    const focus = Array.isArray(payload && payload.focus_olqs)
-      ? payload.focus_olqs.filter((x) => typeof x === "string" && OLQ_KEYS.indexOf(x) !== -1).slice(0, 5)
-      : [];
-
-    if (!env.GEMINI_API_KEY) {
-      return json({ error: "Server not configured (missing GEMINI_API_KEY)" }, 500, cors);
-    }
-
-    const body = {
-      contents: buildContents(mode, items, focus),
-      generationConfig: {
-        temperature: 0.6,
-        responseMimeType: "application/json"
-      }
-    };
-
-    // Try each model in turn; first success wins. Two passes with a short
-    // backoff, and a per-model timeout, so transient throttling or a stalled
-    // model does not fail the whole request.
-    let text = null, usedModel = null, lastErr = "";
-    outer:
-    for (let pass = 0; pass < PASSES; pass++) {
-      if (pass > 0) await new Promise((r) => setTimeout(r, PASS_BACKOFF_MS));
-      for (const model of MODELS) {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${env.GEMINI_API_KEY}`;
-        let gemRes;
-        try {
-          gemRes = await fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body),
-            signal: AbortSignal.timeout(MODEL_TIMEOUT_MS)
-          });
-        } catch (e) {
-          lastErr = "fetch failed/timed out for " + model;
-          continue;
-        }
-        if (!gemRes.ok) {
-          const t = await gemRes.text();
-          lastErr = model + " → " + gemRes.status + ": " + t.slice(0, 400);
-          continue;
-        }
-        const data = await gemRes.json();
-        const t =
-          data &&
-          data.candidates &&
-          data.candidates[0] &&
-          data.candidates[0].content &&
-          data.candidates[0].content.parts &&
-          data.candidates[0].content.parts[0] &&
-          data.candidates[0].content.parts[0].text;
-        if (t) { text = t; usedModel = model; break outer; }
-        lastErr = "empty response from " + model;
-      }
-    }
-
-    if (!text) {
-      return json({ error: "All models failed", detail: lastErr }, 502, cors);
-    }
-
-    // The model was asked for JSON; parse it, else pass raw text as summary.
-    let parsed;
-    try {
-      parsed = JSON.parse(text);
-    } catch (e) {
-      parsed = { summary: text };
-    }
-    if (parsed && typeof parsed === "object") parsed._model = usedModel;
-    return json(parsed, 200, cors);
+    return handleSession(request, env, cors);
   }
 };
+
+async function handleSession(request, env, cors) {
+  let payload;
+  try { payload = await request.json(); } catch (e) { return json({ error: "Invalid JSON" }, 400, cors); }
+
+  const mode = payload && (payload.mode === "SRT" || payload.mode === "SDT" || payload.mode === "TAT" || payload.mode === "PPDT" || payload.mode === "GPE") ? payload.mode : "WAT";
+  const items = Array.isArray(payload && payload.items) ? payload.items.slice(0, 80) : [];
+  if (!items.length) return json({ error: "No items" }, 400, cors);
+
+  // Optional: the qualities this candidate is currently weakest on, so the
+  // analysis can steer its suggestions toward them. Keys only, capped.
+  const focus = Array.isArray(payload && payload.focus_olqs)
+    ? payload.focus_olqs.filter((x) => typeof x === "string" && OLQ_KEYS.indexOf(x) !== -1).slice(0, 5)
+    : [];
+
+  if (!env.GEMINI_API_KEY) return json({ error: "Server not configured (missing GEMINI_API_KEY)" }, 500, cors);
+
+  const result = await runGemini(env, buildContents(mode, items, focus));
+  if (result.error) return json({ error: "All models failed", detail: result.error }, 502, cors);
+
+  let parsed;
+  try { parsed = JSON.parse(result.text); } catch (e) { parsed = { summary: result.text }; }
+  if (parsed && typeof parsed === "object") {
+    parsed._model = result.model;
+    enrich(mode, items, parsed);   // adds per_item[] + metrics{} (WAT/SRT/TAT); keeps items[] clean
+  }
+  return json(parsed, 200, cors);
+}
+
+async function handleWeekly(request, env, cors) {
+  let payload;
+  try { payload = await request.json(); } catch (e) { return json({ error: "Invalid JSON" }, 400, cors); }
+  if (!env.GEMINI_API_KEY) return json({ error: "Server not configured (missing GEMINI_API_KEY)" }, 500, cors);
+
+  const contents = [{ role: "user", parts: [{ text: buildWeeklyPrompt(payload) }] }];
+  const result = await runGemini(env, contents);
+  if (result.error) return json({ error: "All models failed", detail: result.error }, 502, cors);
+
+  let parsed;
+  try { parsed = JSON.parse(result.text); }
+  catch (e) { parsed = { studentReport: { headline: "", focus: [] }, adminReport: { overview: result.text } }; }
+  if (parsed && typeof parsed === "object") parsed._model = result.model;
+  return json(parsed, 200, cors);
+}
+
+// Shared model-fallback caller: two passes, per-model timeout, first success wins.
+// Returns { text, model } on success or { error } when every model fails.
+async function runGemini(env, contents) {
+  const body = { contents, generationConfig: { temperature: 0.6, responseMimeType: "application/json" } };
+  let lastErr = "";
+  for (let pass = 0; pass < PASSES; pass++) {
+    if (pass > 0) await new Promise((r) => setTimeout(r, PASS_BACKOFF_MS));
+    for (const model of MODELS) {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${env.GEMINI_API_KEY}`;
+      let gemRes;
+      try {
+        gemRes = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+          signal: AbortSignal.timeout(MODEL_TIMEOUT_MS)
+        });
+      } catch (e) { lastErr = "fetch failed/timed out for " + model; continue; }
+      if (!gemRes.ok) {
+        const t = await gemRes.text();
+        lastErr = model + " → " + gemRes.status + ": " + t.slice(0, 400);
+        continue;
+      }
+      const data = await gemRes.json();
+      const t =
+        data && data.candidates && data.candidates[0] && data.candidates[0].content &&
+        data.candidates[0].content.parts && data.candidates[0].content.parts[0] &&
+        data.candidates[0].content.parts[0].text;
+      if (t) return { text: t, model: model };
+      lastErr = "empty response from " + model;
+    }
+  }
+  return { error: lastErr };
+}
 
 // The 15 canonical OLQ keys the course portal aggregates on. The model must
 // emit reflected_keys / work_keys using ONLY these exact strings.
@@ -211,9 +214,10 @@ Return ONLY valid JSON with this exact shape:
   "reflected_keys": ["<one or more of the 15 canonical keys>"],
   "work_keys": ["<one or more of the 15 canonical keys>"],
   "red_flags": ["<serious integrity or disqualifying concern, quoting the response and why it is serious; for SRT especially (found-money use, bribery, cheating, revenge, abandoning duty). EMPTY ARRAY if none>"],
-  "items": [ { "n": <number>, "prompt": "<the word/situation>", "comment": "one-sentence assessment naming the specific pattern (e.g. personal framing, reaches objective, uses 'try', superhero escalation)", "suggestion": "one better alternative response" } ]
+  "items": [ { "n": <number>, "prompt": "<the word/situation>", "comment": "one-sentence assessment naming the specific pattern (e.g. personal framing, reaches objective, uses 'try', superhero escalation)", "suggestion": "one better alternative response", "bucket": "<WAT items only: observational|factual|personal|preachy>", "negation": <WAT items only: true or false>, "bravado": <WAT items only: true or false>, "dictionary_meaning": <WAT items only: true or false>, "reached_objective": <SRT items only: true or false>, "superhero_escalation": <SRT items only: true or false>, "moral_red_flag": <SRT items only: true or false> } ]
 }
-List 3-6 OLQs reflected and 2-4 OLQs to work on, naming actual OLQs from the list. Weight gatekeeper qualities and any integrity concern most heavily. Include an items entry for every response. Be honest, concise and constructive.`,
+List 3-6 OLQs reflected and 2-4 OLQs to work on, naming actual OLQs from the list. Weight gatekeeper qualities and any integrity concern most heavily. Include an items entry for every response. Be honest, concise and constructive.
+For each item, also set the classification booleans for THIS test type: a WORD ASSOCIATION TEST item gets bucket, negation, bravado and dictionary_meaning; a SITUATION REACTION TEST item gets reached_objective, superhero_escalation and moral_red_flag. Omit the fields that do not apply to this test type.`,
     keyGuidance(focus),
     ``,
     `=== Candidate's ${mode} responses ===`,
@@ -282,9 +286,9 @@ Return ONLY valid JSON with this exact shape:
   "reflected_keys": ["<one or more of the 15 canonical keys>"],
   "work_keys": ["<one or more of the 15 canonical keys>"],
   "red_flags": ["<any serious concern across the stories, e.g. recurring violence/revenge, consistently defeatist or hopeless themes; EMPTY ARRAY if none>"],
-  "items": [ { "n": <number>, "prompt": "<the slide label, e.g. Picture 1>", "comment": "one-sentence assessment of this story: hero, initiative, teamwork, past-to-outcome structure, tone and realism", "suggestion": "one concrete way to make this story stronger and more officer-like, grounded in the picture and what the candidate wrote" } ]
+  "items": [ { "n": <number>, "prompt": "<the slide label, e.g. Picture 1>", "comment": "one-sentence assessment of this story: hero, initiative, teamwork, past-to-outcome structure, tone and realism", "suggestion": "one concrete way to make this story stronger and more officer-like, grounded in the picture and what the candidate wrote", "past_outcome_structure": <true or false: does the story have a genuine past build-up leading to an achieved outcome, not a present-only scene>, "lone_wolf_hero": <true or false: does the hero do everything alone instead of taking others along> } ]
 }
-List 3-6 OLQs reflected and 2-4 to work on, naming actual OLQs from the list. Include an items entry for every story written. Be honest, concise and constructive.`,
+List 3-6 OLQs reflected and 2-4 to work on, naming actual OLQs from the list. Include an items entry for every story written. For each story also set the booleans past_outcome_structure and lone_wolf_hero. Be honest, concise and constructive.`,
     keyGuidance(focus)
   ].join("\n");
 }
@@ -385,12 +389,162 @@ function buildContents(mode, items, focus) {
   return [{ role: "user", parts: [{ text: buildPrompt(mode, items, focus) }] }];
 }
 
+/* ---- Structured per-item classification + session metrics (WAT/SRT/TAT) ----
+   Judgment fields come from Gemini (in items[]); mechanical ones are computed
+   here from the raw response; then items[] is cleaned for the open site and
+   per_item[] + metrics{} are attached for the portal. */
+const LOADED_WORDS = ["death","die","dead","fear","afraid","scared","knife","gun","failure","fail","failed","murder","accident","defeat","loss","lose","blood","fight","war","hate","angry","cry","sad","alone","lonely","danger","poison","fire","attack","enemy","problem","quit","weak","coward","revenge","injury","hurt","pain","threat","kill","bomb","theft","cheat","divorce","disease","terror","riot","flood","earthquake","drown"];
+const ADVERBS = ["calmly","bravely","immediately","swiftly","quickly","confidently","politely","carefully","boldly","instantly","fearlessly","courageously","promptly","diligently"];
+const STOCK_PHRASES = ["didn't panic","did not panic","without panic","raised morale","kept calm","keeping calm","stayed calm","remained calm","without fear","no fear","took charge","rose to the occasion","saved the day"];
+
+function hasTry(s) { return /\b(try|tries|tried|trying)\b/i.test(s || ""); }
+function hasAdverbStock(s) {
+  const low = String(s || "").toLowerCase();
+  for (const a of ADVERBS) { if (new RegExp("\\b" + a + "\\b").test(low)) return true; }
+  for (const p of STOCK_PHRASES) { if (low.indexOf(p) !== -1) return true; }
+  return false;
+}
+function normBucket(b) {
+  b = String(b || "").toLowerCase().trim();
+  return (b === "observational" || b === "factual" || b === "personal" || b === "preachy") ? b : null;
+}
+function isLoadedWord(word) {
+  const w = String(word || "").toLowerCase().trim();
+  if (w.length < 3) return false;
+  return LOADED_WORDS.some((L) => w === L || w.indexOf(L) !== -1 || L.indexOf(w) !== -1);
+}
+
+function enrich(mode, reqItems, parsed) {
+  if (mode !== "WAT" && mode !== "SRT" && mode !== "TAT") return;
+  const gItems = Array.isArray(parsed.items) ? parsed.items : [];
+  const byN = {};
+  gItems.forEach((it) => { if (it && it.n != null) byN[it.n] = it; });
+
+  const per_item = [];
+  (Array.isArray(reqItems) ? reqItems : []).forEach((ri, idx) => {
+    const n = (ri && ri.n != null) ? ri.n : (idx + 1);
+    const g = byN[n] || {};
+    const response = (ri && ri.response) || "";
+    if (mode === "WAT") {
+      per_item.push({
+        n: n, response: response,
+        bucket: normBucket(g.bucket),
+        flags: { try: hasTry(response), negation: !!g.negation, bravado: !!g.bravado, dictionary_meaning: !!g.dictionary_meaning }
+      });
+    } else if (mode === "SRT") {
+      per_item.push({
+        n: n, response: response,
+        reached_objective: !!g.reached_objective,
+        superhero_escalation: !!g.superhero_escalation,
+        adverb_stock_phrase: hasAdverbStock(response),
+        moral_red_flag: !!g.moral_red_flag
+      });
+    } else { // TAT
+      per_item.push({
+        n: n, response: response,
+        past_outcome_structure: !!g.past_outcome_structure,
+        lone_wolf_hero: !!g.lone_wolf_hero
+      });
+    }
+  });
+
+  // Keep items[] clean for the open site: strip the judgment fields Gemini added.
+  gItems.forEach((g) => {
+    if (!g) return;
+    ["bucket", "negation", "bravado", "dictionary_meaning", "reached_objective",
+     "superhero_escalation", "moral_red_flag", "past_outcome_structure", "lone_wolf_hero"]
+      .forEach((k) => { delete g[k]; });
+  });
+
+  parsed.per_item = per_item;
+  parsed.metrics = computeMetrics(mode, reqItems, per_item, parsed);
+}
+
+function computeMetrics(mode, reqItems, per_item, parsed) {
+  const attempted = per_item.filter((p) => p.response && p.response.trim()).length;
+  const rate = (num, den) => (den > 0 ? Math.round((num / den) * 100) / 100 : null);
+  const promptOf = (n) => { const it = (reqItems || []).find((x) => x && x.n === n); return it ? it.prompt : ""; };
+  const m = {
+    mode: mode,
+    items_count: per_item.length,
+    attempted_count: attempted,
+    reflected_keys: Array.isArray(parsed.reflected_keys) ? parsed.reflected_keys : [],
+    work_keys: Array.isArray(parsed.work_keys) ? parsed.work_keys : [],
+    red_flags: Array.isArray(parsed.red_flags) ? parsed.red_flags : []
+  };
+  if (mode === "WAT") {
+    const mix = { observational: 0, factual: 0, personal: 0, preachy: 0 };
+    let tryc = 0, loaded = 0, framed = 0;
+    per_item.forEach((p) => {
+      if (p.bucket && mix.hasOwnProperty(p.bucket)) mix[p.bucket]++;
+      if (p.flags.try) tryc++;
+      if (isLoadedWord(promptOf(p.n))) { loaded++; if ((p.bucket === "observational" || p.bucket === "factual") && !p.flags.negation) framed++; }
+    });
+    m.wat_bucket_mix = mix;
+    m.try_count = tryc;
+    m.loaded_framing_rate = rate(framed, loaded);
+  } else if (mode === "SRT") {
+    let ro = 0, se = 0, asp = 0, mrf = 0;
+    per_item.forEach((p) => { if (p.reached_objective) ro++; if (p.superhero_escalation) se++; if (p.adverb_stock_phrase) asp++; if (p.moral_red_flag) mrf++; });
+    m.srt_attempt_count = attempted;
+    m.srt_completion_rate = rate(ro, attempted);
+    m.superhero_escalation_rate = rate(se, attempted);
+    m.adverb_stock_phrase_rate = rate(asp, attempted);
+    m.moral_red_flag_count = mrf;
+  } else { // TAT
+    let st = 0, lw = 0;
+    per_item.forEach((p) => { if (p.past_outcome_structure) st++; if (p.lone_wolf_hero) lw++; });
+    m.tat_structure_rate = rate(st, attempted);
+    m.lone_wolf_hero_rate = rate(lw, attempted);
+  }
+  return m;
+}
+
+// Weekly synthesis over already-analysed data (no raw re-judging).
+function buildWeeklyPrompt(payload) {
+  const student = (payload && payload.student) || {};
+  const data = JSON.stringify({
+    student: { name: student.name || null },
+    window: (payload && payload.window) || {},
+    olq_profile: Array.isArray(payload && payload.olq_profile) ? payload.olq_profile : [],
+    sessions: Array.isArray(payload && payload.sessions) ? payload.sessions : []
+  });
+  return [
+    `You are an experienced, fair SSB (Services Selection Board) coach reviewing one candidate's WEEK of already-analysed practice. You are given their OLQ profile and each session's metrics, per-item classifications and summaries. Do NOT re-judge individual responses; reason over the structured data and the trends across the week.`,
+    `Gatekeeper OLQs (moral values, social adaptability, cooperation, sense of responsibility, liveliness, courage) weigh most. Treat any moral or integrity red flag as the top priority in both reports.`,
+    ``,
+    `Produce TWO things in one JSON object:`,
+    `- studentReport: the 3 to 4 most important things to focus on next, in plain, encouraging language, no jargon, no metric dumps, framed as practice and not the real board. Each focus item is pattern, then why it matters, then one specific action.`,
+    `- adminReport: the full technical breakdown for the mentor: how the metrics moved across the week, movement in the Officer-Like Qualities, gatekeeper-OLQ concerns, recurring patterns, and any serious red flags. Detailed is fine here.`,
+    ``,
+    `Return ONLY valid JSON with this exact shape:`,
+    `{`,
+    `  "studentReport": {`,
+    `    "headline": "one short, encouraging, practice-not-the-board line",`,
+    `    "focus": [ { "pattern": "<what keeps happening, plainly>", "why": "<why it matters for an officer, plainly>", "action": "<one specific thing to do next session>" } ]`,
+    `  },`,
+    `  "adminReport": {`,
+    `    "overview": "2-4 sentence technical summary of the week",`,
+    `    "metrics_movement": [ { "metric": "<metric name>", "from": <number or null>, "to": <number or null>, "trend": "up|down|flat" } ],`,
+    `    "olq_movement": [ { "olq": "<canonical OLQ key>", "reflected_delta": <integer>, "work_delta": <integer> } ],`,
+    `    "gatekeeper_flags": ["<concern on a gatekeeper OLQ; empty array if none>"],`,
+    `    "recurring_patterns": ["<pattern seen across sessions>"],`,
+    `    "red_flags": ["<serious integrity or disqualifying concern this week; empty array if none>"]`,
+    `  }`,
+    `}`,
+    `Keep studentReport.focus to 3 or 4 items. Be honest, specific and constructive.`,
+    ``,
+    `=== Candidate's week (structured data) ===`,
+    data
+  ].join("\n");
+}
+
 function corsHeaders(origin) {
   const allow = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
   return {
     "Access-Control-Allow-Origin": allow,
     "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Headers": "Content-Type, X-Engine-Key",
     "Vary": "Origin"
   };
 }

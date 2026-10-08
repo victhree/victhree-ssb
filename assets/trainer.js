@@ -69,6 +69,9 @@
         work_keys: Array.isArray(data.work_keys) ? data.work_keys : [],
         red_flags: Array.isArray(data.red_flags) ? data.red_flags.filter(function(f){ return f && String(f).trim(); }) : []
       };
+      // Forward the structured session data (WAT/SRT/TAT) for the portal dashboard.
+      if (data.metrics && typeof data.metrics === "object") body.metrics = data.metrics;
+      if (Array.isArray(data.per_item)) body.per_item = data.per_item;
     } else {
       body = { mode: CFG.mode };   // free: only mode is needed
     }
